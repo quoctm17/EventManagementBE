@@ -74,7 +74,7 @@ Tên DB: `EventManagementDB`
 
 ### 1. Clone repo
 ```bash
-git clone git@github.com:<your-username>/EventManagementBE.git
+git clone https://github.com/quoctm17/EventManagementBE.git
 cd EventManagementBE
 ```
 
@@ -123,10 +123,3 @@ dotnet user-secrets set "Jwt:Secret-Key" "super-secret" --project EventManagemen
 - 🚀 BootCamp .NET Cybersoft – Event Management Final Project  
 
 ---
-
-## ✅ TODO
-
-- [ ] Xây dựng `OrderService` + `TicketService`  
-- [ ] Tích hợp Payment Gateway (Stripe, MoMo)  
-- [ ] Tích hợp SignalR để check-in real-time  
-- [ ] Xuất báo cáo PDF/Excel
