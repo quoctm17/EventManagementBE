@@ -8,7 +8,7 @@ namespace EventManagement.Application.Interfaces.Repositories
     public interface IRepository<T> where T : class
     {
         Task<IEnumerable<T>> GetAllAsync();
-        Task<T?> GetByIdAsync(Guid id);   // dùng Guid vì entity có key dạng uniqueidentifier
+        Task<T?> GetByIdAsync(Guid id);
         Task AddAsync(T entity);
         Task UpdateAsync(T entity);
         Task DeleteAsync(Guid id);

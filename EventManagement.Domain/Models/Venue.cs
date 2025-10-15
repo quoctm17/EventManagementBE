@@ -11,6 +11,8 @@ public partial class Venue
 
     public string Address { get; set; } = null!;
 
+    public string Province { get; set; } = null!;
+
     public int? TotalSeats { get; set; }
 
     public DateTime? CreatedAt { get; set; }
@@ -20,4 +22,6 @@ public partial class Venue
     public virtual ICollection<Event> Events { get; set; } = new List<Event>();
 
     public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();
+
+    public virtual ICollection<VenueImage> VenueImages { get; set; } = new List<VenueImage>();
 }

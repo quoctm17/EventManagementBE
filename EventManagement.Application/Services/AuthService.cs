@@ -22,7 +22,7 @@ namespace EventManagement.Application.Services
             _jwtAuthService = jwtAuthService;
         }
 
-        public async Task<AuthResponse?> LoginAsync(UserLoginRequest request)
+        public async Task<AuthResponseDTO?> LoginAsync(UserLoginRequest request)
         {
             var user = await _userRepo.SingleOrDefaultAsync(
                 us => us.Email == request.UsernameOrEmail || us.FullName == request.UsernameOrEmail
@@ -36,7 +36,7 @@ namespace EventManagement.Application.Services
 
             string token = _jwtAuthService.GenerateToken(user);
 
-            return new AuthResponse
+            return new AuthResponseDTO
             {
                 AccessToken = token
             };

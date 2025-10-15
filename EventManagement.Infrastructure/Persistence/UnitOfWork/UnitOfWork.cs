@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using EventManagement.Application.Interfaces;
-using EventManagement.Infrastructure.Persistence.Models;
+using EventManagement.Domain.Models;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EventManagement.Infrastructure.Persistence.UnitOfWork
