@@ -1,10 +1,12 @@
+using AutoMapper;
+using EventManagement.Application.Helpers;
 using System.Text;
 using EventManagement.API.Middleware;
 using EventManagement.Application.Interfaces;
 using EventManagement.Application.Interfaces.Repositories;
 using EventManagement.Application.Interfaces.Services;
 using EventManagement.Application.Services;
-using EventManagement.Infrastructure.Persistence.Models;
+using EventManagement.Infrastructure.Persistence;
 using EventManagement.Infrastructure.Persistence.Repositories;
 using EventManagement.Infrastructure.Persistence.UnitOfWork;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,10 +28,35 @@ builder.Services.AddDbContext<EventManagementDbContext>(options =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICheckinRepository, CheckinRepository>();
+builder.Services.AddScoped<IContractRepository, ContractRepository>();
+builder.Services.AddScoped<IEventImageRepository, EventImageRepository>();
+builder.Services.AddScoped<IEventSeatMappingRepository, EventSeatMappingRepository>();
+builder.Services.AddScoped<IEventStaffRepository, EventStaffRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IOrganizerRequestRepository, OrganizerRequestRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<ISeatRepository, SeatRepository>();
+builder.Services.AddScoped<ISettlementRepository, SettlementRepository>();
+builder.Services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
+builder.Services.AddScoped<ISystemLogRepository, SystemLogRepository>();
+builder.Services.AddScoped<ITicketRepository, TicketRepository>();
+builder.Services.AddScoped<IVenueRepository, VenueRepository>();
+builder.Services.AddScoped<IVenueImageRepository, VenueImageRepository>();
 
 // Services
 builder.Services.AddScoped<IJwtAuthService, JwtAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IHomeService, HomeService>();
+
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Swagger + JWT
 // Add JWT Authentication
@@ -49,7 +76,7 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ValidIssuer = jwtConfig["Issuer"],
         ValidAudience = jwtConfig["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig["Secret-Key"]))
+    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig["Secret-Key"] ?? string.Empty))
     };
 });
 

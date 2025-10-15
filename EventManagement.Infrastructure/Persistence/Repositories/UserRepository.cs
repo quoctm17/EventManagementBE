@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using EventManagement.Application.Interfaces.Repositories;
 using EventManagement.Domain.Models;
-using EventManagement.Infrastructure.Persistence.Models;
+using EventManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventManagement.Infrastructure.Persistence.Repositories
@@ -19,5 +19,6 @@ namespace EventManagement.Infrastructure.Persistence.Repositories
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
+
     }
 }

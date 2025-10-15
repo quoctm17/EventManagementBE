@@ -15,6 +15,12 @@ public partial class User
 
     public string? Phone { get; set; }
 
+    public string? AvatarUrl { get; set; }
+
+    public string? Address { get; set; }
+
+    public DateOnly? Birthdate { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public bool? IsActive { get; set; }

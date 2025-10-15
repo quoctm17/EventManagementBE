@@ -19,11 +19,15 @@ public partial class Event
 
     public DateTime EndTime { get; set; }
 
+    public DateOnly EventDate { get; set; }
+
     public string? CoverImageUrl { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
     public bool? IsPublished { get; set; }
+
+    public string Status { get; set; } = null!;
 
     public string? Additional { get; set; }
 
@@ -42,4 +46,6 @@ public partial class Event
     public virtual ICollection<Settlement> Settlements { get; set; } = new List<Settlement>();
 
     public virtual Venue Venue { get; set; } = null!;
+
+    public virtual ICollection<Category> Categories { get; set; } = new List<Category>();
 }
