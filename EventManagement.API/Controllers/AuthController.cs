@@ -24,7 +24,7 @@ namespace EventManagement.API.Controllers
 
             if (authResult == null)
             {
-                var responseFail = new HTTPResponseValue<AuthResponse>(
+                var responseFail = new HTTPResponseValue<AuthResponseDTO>(
                     null,
                     StatusResponse.Unauthorized,
                     MessageResponse.Unauthorized
@@ -32,7 +32,7 @@ namespace EventManagement.API.Controllers
                 return Unauthorized(responseFail);
             }
 
-            var responseSuccess = new HTTPResponseValue<AuthResponse>(
+            var responseSuccess = new HTTPResponseValue<AuthResponseDTO>(
                 authResult,
                 StatusResponse.Success,
                 MessageResponse.Success
