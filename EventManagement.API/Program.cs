@@ -4,6 +4,7 @@ using System.Text;
 using EventManagement.API.Middleware;
 using EventManagement.Application.Interfaces;
 using EventManagement.Application.Interfaces.Repositories;
+// service usings are above
 using EventManagement.Application.Interfaces.Services;
 using EventManagement.Application.Services;
 using EventManagement.Infrastructure.Persistence;
@@ -54,6 +55,7 @@ builder.Services.AddScoped<IJwtAuthService, JwtAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IHomeService, HomeService>();
+builder.Services.AddScoped<IEventService, EventService>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
