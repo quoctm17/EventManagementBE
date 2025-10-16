@@ -22,7 +22,7 @@ namespace EventManagement.Application.Services
             _jwtAuthService = jwtAuthService;
         }
 
-        public async Task<AuthResponseDTO?> LoginAsync(UserLoginRequest request)
+        public async Task<AuthResponseDTO?> LoginAsync(UserLoginRequestDTO request)
         {
             var user = await _userRepo.SingleOrDefaultAsync(
                 us => us.Email == request.UsernameOrEmail || us.FullName == request.UsernameOrEmail
@@ -42,7 +42,7 @@ namespace EventManagement.Application.Services
             };
         }
 
-        public async Task<bool> RegisterAsync(UserRegisterRequest request)
+        public async Task<bool> RegisterAsync(UserRegisterRequestDTO request)
         {
             var existingUser = await _userRepo.SingleOrDefaultAsync(
                 u => u.Email == request.Email || u.FullName == request.UserName

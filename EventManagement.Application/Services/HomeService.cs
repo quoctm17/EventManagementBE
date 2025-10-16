@@ -13,12 +13,14 @@ namespace EventManagement.Application.Services
     {
         private readonly IEventRepository _eventRepository;
         private readonly ICategoryRepository _categoryRepository;
+        private readonly IEventSeatMappingRepository _seatMappingRepository;
         private readonly IMapper _mapper;
 
-        public HomeService(IEventRepository eventRepository, ICategoryRepository categoryRepository, IMapper mapper)
+        public HomeService(IEventRepository eventRepository, ICategoryRepository categoryRepository, IEventSeatMappingRepository seatMappingRepository, IMapper mapper)
         {
             _eventRepository = eventRepository;
             _categoryRepository = categoryRepository;
+            _seatMappingRepository = seatMappingRepository;
             _mapper = mapper;
         }
 
@@ -36,7 +38,7 @@ namespace EventManagement.Application.Services
 
             // Populate starting prices
             var eventIds = response.RecommendedEvents.Select(r => r.EventId).ToList();
-            var priceMap = await _eventRepository.GetStartingPricesAsync(eventIds);
+            var priceMap = await _seatMappingRepository.GetStartingPricesAsync(eventIds);
             foreach (var dto in response.RecommendedEvents)
             {
                 if (priceMap.TryGetValue(dto.EventId, out var p)) dto.StartingPrice = p;

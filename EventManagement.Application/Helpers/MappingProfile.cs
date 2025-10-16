@@ -19,6 +19,20 @@ namespace EventManagement.Application.Helpers
                 .ForMember(dest => dest.CoverImageUrl, opt => opt.MapFrom(src => src.CoverImageUrl))
                 .ForMember(dest => dest.StartingPrice, opt => opt.Ignore());
 
+            CreateMap<Event, EventListItemDTO>()
+                .ForMember(dest => dest.VenueName, opt => opt.MapFrom(src => src.Venue.VenueName))
+                .ForMember(dest => dest.VenueProvince, opt => opt.MapFrom(src => src.Venue.Province))
+                .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories.Select(c => c.CategoryName)))
+                .ForMember(dest => dest.CoverImageUrl, opt => opt.MapFrom(src => src.CoverImageUrl))
+                .ForMember(dest => dest.StartingPrice, opt => opt.Ignore());
+
+            CreateMap<Event, EventDetailDTO>()
+                .ForMember(dest => dest.VenueName, opt => opt.MapFrom(src => src.Venue.VenueName))
+                .ForMember(dest => dest.VenueAddress, opt => opt.MapFrom(src => src.Venue.Address))
+                .ForMember(dest => dest.VenueProvince, opt => opt.MapFrom(src => src.Venue.Province))
+                .ForMember(dest => dest.ImageUrls, opt => opt.Ignore())
+                .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories.Select(c => c.CategoryName)));
+
             // Venue -> DestinationDto: map Province -> City and choose main image if any
             CreateMap<Venue, DestinationDTO>()
                 .ForMember(dest => dest.City, opt => opt.MapFrom(src => src.Province))

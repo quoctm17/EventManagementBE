@@ -9,6 +9,8 @@ namespace EventManagement.Application.Interfaces.Repositories
     {
         Task<IEnumerable<Event>> GetUpcomingPublishedAsync(int limit = 6);
         Task<IEnumerable<Venue>> GetPopularDestinationsAsync(int limit = 4);
-        Task<Dictionary<Guid, decimal?>> GetStartingPricesAsync(IEnumerable<Guid> eventIds);
+        
+        Task<(IEnumerable<Event> Items, int Total)> GetPagedEventsAsync(int page, int pageSize, string? search = null, string? province = null, Guid? categoryId = null, DateTime? date = null, decimal? priceMin = null, decimal? priceMax = null, string? sortBy = null);
+        Task<Event?> GetEventWithDetailsAsync(Guid eventId);
     }
 }

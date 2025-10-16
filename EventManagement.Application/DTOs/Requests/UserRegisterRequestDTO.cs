@@ -1,6 +1,6 @@
 namespace EventManagement.Application.DTOs.Requests
 {
-    public class UserRegisterRequest
+    public class UserRegisterRequestDTO
     {
         public string UserName { get; set; }
         public string Email { get; set; }

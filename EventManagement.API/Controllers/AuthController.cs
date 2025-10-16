@@ -18,7 +18,7 @@ namespace EventManagement.API.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] UserLoginRequest request)
+        public async Task<IActionResult> Login([FromBody] UserLoginRequestDTO request)
         {
             var authResult = await _authService.LoginAsync(request);
 
@@ -42,7 +42,7 @@ namespace EventManagement.API.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] UserRegisterRequest request)
+        public async Task<IActionResult> Register([FromBody] UserRegisterRequestDTO request)
         {
             var success = await _authService.RegisterAsync(request);
 
@@ -51,7 +51,7 @@ namespace EventManagement.API.Controllers
                 var responseFail = new HTTPResponseValue<bool>(
                     false,
                     StatusResponse.BadRequest,
-                    "User already exists"
+                    MessageResponse.BadRequest
                 );
                 return BadRequest(responseFail);
             }
