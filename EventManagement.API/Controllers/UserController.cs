@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using EventManagement.Application.Constants;
 using EventManagement.Application.Interfaces.Services;
 using EventManagement.Application.DTOs.Responses;
@@ -25,28 +26,29 @@ namespace EventManagement.API.Controllers
 		public async Task<IActionResult> GetCurrentUser()
 		{
 			var authHeader = Request.Headers["Authorization"].FirstOrDefault();
-			var response = new HTTPResponseValue<UserResponseDTO>();
 			if (string.IsNullOrEmpty(authHeader))
 			{
-				response.Status = StatusResponse.Unauthorized;
-				response.Message = MessageResponse.Unauthorized;
-				response.Content = null;
-				return Unauthorized(response);
+				var resp = new HTTPResponseValue<string>(null, StatusResponse.Unauthorized, MessageResponse.Unauthorized);
+				return Unauthorized(resp);
 			}
 
-			var user = await _userService.GetCurrentUserAsync(authHeader);
-			if (user == null)
+			try
 			{
-				response.Status = StatusResponse.Unauthorized;
-				response.Message = MessageResponse.Unauthorized;
-				response.Content = null;
-				return Unauthorized(response);
-			}
+				var user = await _userService.GetCurrentUserAsync(authHeader);
+				if (user == null)
+				{
+					var resp = new HTTPResponseValue<string>(null, StatusResponse.Unauthorized, MessageResponse.Unauthorized);
+					return Unauthorized(resp);
+				}
 
-			response.Status = StatusResponse.Success;
-			response.Message = MessageResponse.Success;
-			response.Content = user;
-			return Ok(response);
+				var success = new HTTPResponseValue<UserResponseDTO>(user, StatusResponse.Success, MessageResponse.Success);
+				return Ok(success);
+			}
+			catch (System.Exception)
+			{
+				var error = new HTTPResponseValue<string>(null, StatusResponse.Error, MessageResponse.Error);
+				return StatusCode(500, error);
+			}
 		}
 	}
 }

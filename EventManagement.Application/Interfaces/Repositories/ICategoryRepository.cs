@@ -1,9 +1,10 @@
 using EventManagement.Domain.Models;
+using EventManagement.Application.DTOs.Responses;
 
 namespace EventManagement.Application.Interfaces.Repositories
 {
     public interface ICategoryRepository : IRepository<Category>
     {
-        // Use base IRepository<T> for standard CRUD. Add custom methods here if needed.
+        Task<List<CategoryOptionDTO>> GetAllCategoryOptionsAsync();
     }
 }

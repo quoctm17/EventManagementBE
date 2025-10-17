@@ -51,7 +51,7 @@ namespace EventManagement.Infrastructure.Persistence.Repositories
                 .ToListAsync();
         }
 
-        public async Task<(IEnumerable<Event> Items, int Total)> GetPagedEventsAsync(int page, int pageSize, string? search = null, string? province = null, Guid? categoryId = null, DateTime? date = null, decimal? priceMin = null, decimal? priceMax = null, string? sortBy = null)
+        public async Task<(IEnumerable<Event> Items, int Total)> GetPagedEventsAsync(int page, int pageSize, string? search = null, string? province = null, IEnumerable<Guid>? categoryIds = null, DateTime? date = null, decimal? priceMin = null, decimal? priceMax = null, string? sortBy = null)
         {
             var query = _context.Events
                 .Include(e => e.Venue)
@@ -72,9 +72,12 @@ namespace EventManagement.Infrastructure.Persistence.Repositories
                 query = query.Where(e => e.Venue != null && e.Venue.Province.ToLower() == p);
             }
 
-            if (categoryId.HasValue)
+            if (categoryIds != null && categoryIds.Any())
             {
-                query = query.Where(e => e.Categories.Any(c => c.CategoryId == categoryId.Value));
+                // AND semantics: event must have all requested category ids
+                var idsList = categoryIds.ToList();
+                var reqCount = idsList.Count;
+                query = query.Where(e => e.Categories.Count(c => idsList.Contains(c.CategoryId)) == reqCount);
             }
 
             if (date.HasValue)
@@ -124,8 +127,19 @@ namespace EventManagement.Infrastructure.Persistence.Repositories
                 .Include(e => e.EventImages)
                 .Include(e => e.Categories)
                 .Include(e => e.EventSeatMappings)
+                .Include(e => e.Organizer)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(e => e.EventId == eventId && e.IsPublished == true);
+        }
+
+        public async Task<List<string>> GetAllProvincesAsync()
+        {
+            return await _context.Venues
+                .Where(v => !string.IsNullOrEmpty(v.Province))
+                .Select(v => v.Province.Trim())
+                .Distinct()
+                .OrderBy(p => p)
+                .ToListAsync();
         }
     }
 }

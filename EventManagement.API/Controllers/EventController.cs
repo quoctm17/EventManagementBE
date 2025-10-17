@@ -22,19 +22,47 @@ namespace EventManagement.API.Controllers
         [HttpGet]
         public async Task<ActionResult<HTTPResponseValue<PagedResult<EventListItemDTO>>>> Get([FromQuery] EventQueryRequestDTO query)
         {
-            var data = await _eventService.GetEventsAsync(query);
-            var response = new HTTPResponseValue<PagedResult<EventListItemDTO>>(data, StatusResponse.Success, MessageResponse.Success);
-            return Ok(response);
+            if (query == null)
+            {
+                var bad = new HTTPResponseValue<string>(null, StatusResponse.BadRequest, MessageResponse.BadRequest);
+                return BadRequest(bad);
+            }
+
+            try
+            {
+                var data = await _eventService.GetEventsAsync(query);
+                var response = new HTTPResponseValue<PagedResult<EventListItemDTO>>(data, StatusResponse.Success, MessageResponse.Success);
+                return Ok(response);
+            }
+            catch (System.Exception)
+            {
+                var error = new HTTPResponseValue<string>(null, StatusResponse.Error, MessageResponse.Error);
+                return StatusCode(500, error);
+            }
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<HTTPResponseValue<EventDetailDTO>>> GetById(Guid id)
         {
-            var data = await _eventService.GetEventByIdAsync(id);
-            if (data == null) return NotFound(new HTTPResponseValue<string>(null, StatusResponse.NotFound, MessageResponse.NotFound));
+            if (id == Guid.Empty)
+            {
+                var bad = new HTTPResponseValue<string>(null, StatusResponse.BadRequest, MessageResponse.BadRequest);
+                return BadRequest(bad);
+            }
 
-            var response = new HTTPResponseValue<EventDetailDTO>(data, StatusResponse.Success, MessageResponse.Success);
-            return Ok(response);
+            try
+            {
+                var data = await _eventService.GetEventByIdAsync(id);
+                if (data == null) return NotFound(new HTTPResponseValue<string>(null, StatusResponse.NotFound, MessageResponse.NotFound));
+
+                var response = new HTTPResponseValue<EventDetailDTO>(data, StatusResponse.Success, MessageResponse.Success);
+                return Ok(response);
+            }
+            catch (System.Exception ex)
+            {
+                var error = new HTTPResponseValue<string>(null, StatusResponse.Error, MessageResponse.Error);
+                return StatusCode(500, error);
+            }
         }
     }
 }
