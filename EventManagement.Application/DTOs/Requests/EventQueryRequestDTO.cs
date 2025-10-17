@@ -9,7 +9,7 @@ namespace EventManagement.Application.DTOs.Requests
         public int PageSize { get; set; } = 12;
         public string? Search { get; set; }
         public string? Province { get; set; }
-        public Guid? CategoryId { get; set; }
+        public List<Guid>? CategoryIds { get; set; }
         public DateTime? Date { get; set; }
         public decimal? PriceMin { get; set; }
         public decimal? PriceMax { get; set; }

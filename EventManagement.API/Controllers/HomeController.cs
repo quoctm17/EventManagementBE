@@ -20,15 +20,23 @@ namespace EventManagement.API.Controllers
         [HttpGet]
         public async Task<ActionResult<HTTPResponseValue<HomeResponseDTO>>> Get()
         {
-            var data = await _homeService.GetHomeAsync();
-            var response = new HTTPResponseValue<HomeResponseDTO>
+            try
             {
-                Status = StatusResponse.Success,
-                Message = MessageResponse.Success,
-                Content = data
-            };
+                var data = await _homeService.GetHomeAsync();
+                var response = new HTTPResponseValue<HomeResponseDTO>
+                {
+                    Status = StatusResponse.Success,
+                    Message = MessageResponse.Success,
+                    Content = data
+                };
 
-            return Ok(response);
+                return Ok(response);
+            }
+            catch (System.Exception)
+            {
+                var error = new HTTPResponseValue<string>(null, StatusResponse.Error, MessageResponse.Error);
+                return StatusCode(500, error);
+            }
         }
     }
 }

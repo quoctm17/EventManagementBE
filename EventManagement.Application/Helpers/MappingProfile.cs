@@ -28,15 +28,18 @@ namespace EventManagement.Application.Helpers
 
             CreateMap<Event, EventDetailDTO>()
                 .ForMember(dest => dest.VenueName, opt => opt.MapFrom(src => src.Venue.VenueName))
-                .ForMember(dest => dest.VenueAddress, opt => opt.MapFrom(src => src.Venue.Address))
-                .ForMember(dest => dest.VenueProvince, opt => opt.MapFrom(src => src.Venue.Province))
                 .ForMember(dest => dest.ImageUrls, opt => opt.Ignore())
-                .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories.Select(c => c.CategoryName)));
+                .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories.Select(c => c.CategoryName)))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.Organizer, opt => opt.MapFrom(src => src.Organizer))
+                .ForMember(dest => dest.TicketTiers, opt => opt.Ignore());
 
             // Venue -> DestinationDto: map Province -> City and choose main image if any
             CreateMap<Venue, DestinationDTO>()
                 .ForMember(dest => dest.City, opt => opt.MapFrom(src => src.Province))
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.VenueImages.Where(i => i.IsMain == true).Select(i => i.ImageUrl).FirstOrDefault()));
+
+            // Ticket tiers are aggregated in the service layer (group by TicketCategory)
         }
     }
 }

@@ -11,20 +11,22 @@ namespace EventManagement.Application.Services
 {
     public class EventService : IEventService
     {
-    private readonly IEventRepository _eventRepository;
-    private readonly IEventSeatMappingRepository _seatMappingRepository;
-    private readonly IMapper _mapper;
+        private readonly IEventRepository _eventRepository;
+        private readonly IEventSeatMappingRepository _seatMappingRepository;
+        private readonly IMapper _mapper;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public EventService(IEventRepository eventRepository, IEventSeatMappingRepository seatMappingRepository, IMapper mapper)
+        public EventService(IEventRepository eventRepository, IEventSeatMappingRepository seatMappingRepository, ICategoryRepository categoryRepository, IMapper mapper)
         {
             _eventRepository = eventRepository;
             _seatMappingRepository = seatMappingRepository;
+            _categoryRepository = categoryRepository;
             _mapper = mapper;
         }
 
         public async Task<PagedResult<EventListItemDTO>> GetEventsAsync(EventQueryRequestDTO query)
         {
-            var (items, total) = await _eventRepository.GetPagedEventsAsync(query.Page, query.PageSize, query.Search, query.Province, query.CategoryId, query.Date, query.PriceMin, query.PriceMax, query.SortBy);
+            var (items, total) = await _eventRepository.GetPagedEventsAsync(query.Page, query.PageSize, query.Search, query.Province, query.CategoryIds, query.Date, query.PriceMin, query.PriceMax, query.SortBy);
 
             var dtoItems = items.Select(e => _mapper.Map<EventListItemDTO>(e)).ToList();
 
@@ -36,13 +38,21 @@ namespace EventManagement.Application.Services
                 if (priceMap.TryGetValue(dto.EventId, out var p)) dto.StartingPrice = p;
             }
 
+            // Collect available categories from Category repository (all categories in DB)
+            var categories = await _categoryRepository.GetAllCategoryOptionsAsync();
+
+            // Collect available provinces using an optimized repository method
+            var provinces = await _eventRepository.GetAllProvincesAsync();
+
             return new PagedResult<EventListItemDTO>
             {
                 Items = dtoItems,
                 Page = query.Page,
                 PageSize = query.PageSize,
                 TotalItems = total,
-                TotalPages = (int)Math.Ceiling((double)total / query.PageSize)
+                TotalPages = (int)Math.Ceiling((double)total / query.PageSize),
+                AvailableCategories = categories,
+                AvailableProvinces = provinces
             };
         }
 
@@ -55,6 +65,29 @@ namespace EventManagement.Application.Services
             // fill image urls
             dto.ImageUrls = e.EventImages?.Where(i => !string.IsNullOrEmpty(i.ImageUrl)).Select(i => i.ImageUrl!).ToList() ?? new List<string>();
             dto.Categories = e.Categories?.Select(c => c.CategoryName).ToList() ?? new List<string>();
+            // Organizer mapping is handled by AutoMapper. Ensure Organizer is not null when available.
+            if (e.Organizer != null)
+            {
+                // Organizer already mapped into dto. No-op here, but keep for clarity.
+            }
+
+            // Build aggregated ticket tiers from EventSeatMappings
+            if (e.EventSeatMappings != null && e.EventSeatMappings.Count > 0)
+            {
+                var tiers = e.EventSeatMappings
+                    .Where(m => m != null)
+                    .GroupBy(m => m.TicketCategory)
+                    .Select(g => new TicketTierDTO
+                    {
+                        TicketCategory = g.Key,
+                        Price = g.Min(x => x.Price),
+                        AvailableSeats = g.Count(x => x.IsAvailable != false)
+                    })
+                    .OrderBy(t => t.Price)
+                    .ToList();
+
+                dto.TicketTiers = tiers;
+            }
 
             return dto;
         }
