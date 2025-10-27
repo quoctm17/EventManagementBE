@@ -6,5 +6,6 @@ namespace EventManagement.Application.Interfaces.Services
     {
         string GenerateToken(User user);
         string DecodePayloadToken(string token);
+        bool ValidateToken(string token);
     }
 }

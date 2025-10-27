@@ -25,5 +25,14 @@ namespace EventManagement.Infrastructure.Persistence.Repositories
 
             return prices.ToDictionary(p => p.EventId, p => p.MinPrice);
         }
+
+        public async Task<IEnumerable<EventSeatMapping>> GetByEventIdWithSeatAsync(Guid eventId)
+        {
+            return await _context.EventSeatMappings
+                .Include(m => m.Seat)
+                .Where(m => m.EventId == eventId)
+                .AsNoTracking()
+                .ToListAsync();
+        }
     }
 }

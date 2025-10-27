@@ -43,6 +43,8 @@ public partial class Event
 
     public virtual User Organizer { get; set; } = null!;
 
+    public virtual ICollection<SeatHold> SeatHolds { get; set; } = new List<SeatHold>();
+
     public virtual ICollection<Settlement> Settlements { get; set; } = new List<Settlement>();
 
     public virtual Venue Venue { get; set; } = null!;

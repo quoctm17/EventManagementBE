@@ -13,7 +13,7 @@ namespace EventManagement.Application.Services
     {
         private readonly IUserRepository _userRepo;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IJwtAuthService _jwtAuthService; // JWT service 
+        private readonly IJwtAuthService _jwtAuthService;
 
         public AuthService(IUserRepository userRepo, IUnitOfWork unitOfWork, IJwtAuthService jwtAuthService)
         {
@@ -62,6 +62,13 @@ namespace EventManagement.Application.Services
             await _unitOfWork.SaveChangesAsync();
 
             return true;
+        }
+
+        public Task<bool> ValidateTokenAsync(string token)
+        {
+            // Delegate to JwtAuthService which knows issuer/audience/signing key
+            var isValid = _jwtAuthService.ValidateToken(token);
+            return Task.FromResult(isValid);
         }
     }
 }

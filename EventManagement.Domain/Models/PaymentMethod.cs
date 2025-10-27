@@ -7,6 +7,8 @@ public partial class PaymentMethod
 {
     public Guid PaymentMethodId { get; set; }
 
+    public string? GatewayKey { get; set; }
+
     public string MethodName { get; set; } = null!;
 
     public string? Provider { get; set; }

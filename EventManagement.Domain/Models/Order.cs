@@ -15,9 +15,13 @@ public partial class Order
 
     public DateTime? CreatedAt { get; set; }
 
+    public DateTime? OrderPendingExpires { get; set; }
+
     public string? Additional { get; set; }
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+    public virtual ICollection<SeatHold> SeatHolds { get; set; } = new List<SeatHold>();
 
     public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 

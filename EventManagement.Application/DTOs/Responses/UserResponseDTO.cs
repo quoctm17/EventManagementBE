@@ -9,9 +9,12 @@ namespace EventManagement.Application.DTOs.Responses
         public string? AvatarUrl { get; set; }
         public string? Address { get; set; }
         public DateOnly? Birthdate { get; set; }
+        public string? Description { get; set; }
         public DateTime? CreatedAt { get; set; }
         public bool IsActive { get; set; }
         public string? Additional { get; set; }
         public List<string> Roles { get; set; } = new List<string>();
+        public int TicketsPurchasedCount { get; set; }
+        public int EventsCreatedCount { get; set; }
     }
 }

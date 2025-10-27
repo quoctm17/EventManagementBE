@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using EventManagement.Application.DTOs.Requests;
 using EventManagement.Application.DTOs.Responses;
 using EventManagement.Application.Interfaces.Services;
@@ -34,7 +32,7 @@ namespace EventManagement.API.Controllers
                 var response = new HTTPResponseValue<PagedResult<EventListItemDTO>>(data, StatusResponse.Success, MessageResponse.Success);
                 return Ok(response);
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 var error = new HTTPResponseValue<string>(null, StatusResponse.Error, MessageResponse.Error);
                 return StatusCode(500, error);
@@ -58,7 +56,29 @@ namespace EventManagement.API.Controllers
                 var response = new HTTPResponseValue<EventDetailDTO>(data, StatusResponse.Success, MessageResponse.Success);
                 return Ok(response);
             }
-            catch (System.Exception ex)
+            catch (Exception)
+            {
+                var error = new HTTPResponseValue<string>(null, StatusResponse.Error, MessageResponse.Error);
+                return StatusCode(500, error);
+            }
+        }
+
+        [HttpGet("{id}/seats")]
+        public async Task<ActionResult<HTTPResponseValue<List<EventSeatResponseDTO>>>> GetSeats(Guid id)
+        {
+            if (id == Guid.Empty)
+            {
+                var bad = new HTTPResponseValue<string>(null, StatusResponse.BadRequest, MessageResponse.BadRequest);
+                return BadRequest(bad);
+            }
+
+            try
+            {
+                var data = await _eventService.GetEventSeatsAsync(id);
+                var response = new HTTPResponseValue<List<EventSeatResponseDTO>>(data, StatusResponse.Success, MessageResponse.Success);
+                return Ok(response);
+            }
+            catch (Exception)
             {
                 var error = new HTTPResponseValue<string>(null, StatusResponse.Error, MessageResponse.Error);
                 return StatusCode(500, error);
