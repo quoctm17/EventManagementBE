@@ -11,6 +11,7 @@ namespace EventManagement.Application.DTOs.Responses
         public decimal Price { get; set; }
         public Guid? AttendeeId { get; set; }
         public string? Qrcode { get; set; }
+        public string? QrImageUrl { get; set; }
         public DateTime? PurchaseDate { get; set; }
         public string Status { get; set; } = null!;
         public string? Additional { get; set; }

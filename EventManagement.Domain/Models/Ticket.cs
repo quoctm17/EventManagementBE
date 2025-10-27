@@ -19,6 +19,8 @@ public partial class Ticket
 
     public string? Qrcode { get; set; }
 
+    public string? QrImageUrl { get; set; }
+
     public DateTime? PurchaseDate { get; set; }
 
     public string Status { get; set; } = null!;

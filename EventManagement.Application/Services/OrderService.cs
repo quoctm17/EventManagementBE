@@ -25,10 +25,11 @@ namespace EventManagement.Application.Services
         private readonly IPaymentService _paymentService;
         private readonly IUnitOfWork _uow;
         private readonly IQRCodeService _qrService;
+        private readonly ICloudinaryService _cloudinaryService;
         private readonly IEmailService _emailService;
         private readonly IUserRepository _userRepo;
         private readonly IConfiguration _configuration;
-    private readonly ILogger<OrderService> _logger;
+        private readonly ILogger<OrderService> _logger;
 
         public OrderService(
             IOrderRepository orderRepo,
@@ -41,6 +42,7 @@ namespace EventManagement.Application.Services
             IUnitOfWork uow,
             IConfiguration configuration,
             IQRCodeService qrService,
+            ICloudinaryService cloudinaryService,
             IEmailService emailService,
             IUserRepository userRepo,
             ILogger<OrderService> logger)
@@ -55,6 +57,7 @@ namespace EventManagement.Application.Services
             _uow = uow;
             _configuration = configuration;
             _qrService = qrService;
+            _cloudinaryService = cloudinaryService;
             _emailService = emailService;
             _userRepo = userRepo;
             _logger = logger;
@@ -97,6 +100,7 @@ namespace EventManagement.Application.Services
                     Price = t.Price,
                     AttendeeId = t.AttendeeId,
                     Qrcode = t.Qrcode,
+                    QrImageUrl = t.QrImageUrl,
                     PurchaseDate = t.PurchaseDate,
                     Status = t.Status,
                     Additional = t.Additional,
@@ -130,6 +134,7 @@ namespace EventManagement.Application.Services
                     Price = t.Price,
                     AttendeeId = t.AttendeeId,
                     Qrcode = t.Qrcode,
+                    QrImageUrl = t.QrImageUrl,
                     PurchaseDate = t.PurchaseDate,
                     Status = t.Status,
                     Additional = t.Additional,
@@ -364,6 +369,21 @@ namespace EventManagement.Application.Services
                                 t.PurchaseDate = parsedDate;
                                 var qrPayload = _qrService.BuildTicketPayload(t.TicketId, t.OrderId, t.EventId, t.AttendeeId, null);
                                 t.Qrcode = qrPayload;
+                                // Upload QR image if not already uploaded
+                                if (string.IsNullOrWhiteSpace(t.QrImageUrl))
+                                {
+                                    try
+                                    {
+                                        var png = _qrService.GeneratePng(qrPayload, 6);
+                                        var folder = _cloudinaryService.BuildTicketFolder(t.EventId, t.OrderId);
+                                        var url = await _cloudinaryService.UploadImageAsync(png, folder, t.TicketId.ToString("N"));
+                                        t.QrImageUrl = url;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        try { _logger.LogError(ex, "Failed to upload QR image for ticket {TicketId}", t.TicketId); } catch { }
+                                    }
+                                }
                                 await _ticketRepo.UpdateAsync(t);
                             }
                             // Persist changes before sending email so query sees Issued tickets
@@ -391,6 +411,20 @@ namespace EventManagement.Application.Services
                         foreach (var t in tickets)
                         {
                             t.Status = TicketStatus.Cancelled;
+                            // Best-effort delete QR image if existed
+                            try
+                            {
+                                if (!string.IsNullOrWhiteSpace(t.QrImageUrl))
+                                {
+                                    var pid = _cloudinaryService.BuildTicketPublicId(t.EventId, t.OrderId, t.TicketId);
+                                    await _cloudinaryService.DeleteImageByPublicIdAsync(pid);
+                                    t.QrImageUrl = null;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                try { _logger.LogWarning(ex, "Failed to delete QR image for ticket {TicketId}", t.TicketId); } catch { }
+                            }
                             await _ticketRepo.UpdateAsync(t);
                         }
                     }
@@ -460,6 +494,20 @@ namespace EventManagement.Application.Services
                             t.PurchaseDate = txTimeUtc;
                             var qrPayload = _qrService.BuildTicketPayload(t.TicketId, t.OrderId, t.EventId, t.AttendeeId, null);
                             t.Qrcode = qrPayload;
+                            if (string.IsNullOrWhiteSpace(t.QrImageUrl))
+                            {
+                                try
+                                {
+                                    var png = _qrService.GeneratePng(qrPayload, 6);
+                                    var folder = _cloudinaryService.BuildTicketFolder(t.EventId, t.OrderId);
+                                    var url = await _cloudinaryService.UploadImageAsync(png, folder, t.TicketId.ToString("N"));
+                                    t.QrImageUrl = url;
+                                }
+                                catch (Exception ex)
+                                {
+                                    try { _logger.LogError(ex, "Failed to upload QR image for ticket {TicketId}", t.TicketId); } catch { }
+                                }
+                            }
                             await _ticketRepo.UpdateAsync(t);
                         }
                         // Persist changes before sending email so query sees Issued tickets
@@ -486,6 +534,19 @@ namespace EventManagement.Application.Services
                         foreach (var t in tickets)
                         {
                             t.Status = TicketStatus.Cancelled;
+                            try
+                            {
+                                if (!string.IsNullOrWhiteSpace(t.QrImageUrl))
+                                {
+                                    var pid = _cloudinaryService.BuildTicketPublicId(t.EventId, t.OrderId, t.TicketId);
+                                    await _cloudinaryService.DeleteImageByPublicIdAsync(pid);
+                                    t.QrImageUrl = null;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                try { _logger.LogWarning(ex, "Failed to delete QR image for ticket {TicketId}", t.TicketId); } catch { }
+                            }
                             await _ticketRepo.UpdateAsync(t);
                         }
                     }
@@ -518,6 +579,19 @@ namespace EventManagement.Application.Services
                     foreach (var t in tickets)
                     {
                         t.Status = TicketStatus.Cancelled;
+                            try
+                            {
+                                if (!string.IsNullOrWhiteSpace(t.QrImageUrl))
+                                {
+                                    var pid = _cloudinaryService.BuildTicketPublicId(t.EventId, t.OrderId, t.TicketId);
+                                    await _cloudinaryService.DeleteImageByPublicIdAsync(pid);
+                                    t.QrImageUrl = null;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                try { _logger.LogWarning(ex, "Failed to delete QR image for ticket {TicketId}", t.TicketId); } catch { }
+                            }
                         await _ticketRepo.UpdateAsync(t);
                     }
                 }
@@ -600,6 +674,19 @@ namespace EventManagement.Application.Services
                 foreach (var t in tickets)
                 {
                     t.Status = TicketStatus.Cancelled;
+                    try
+                    {
+                        if (!string.IsNullOrWhiteSpace(t.QrImageUrl))
+                        {
+                            var pid = _cloudinaryService.BuildTicketPublicId(t.EventId, t.OrderId, t.TicketId);
+                            await _cloudinaryService.DeleteImageByPublicIdAsync(pid);
+                            t.QrImageUrl = null;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        try { _logger.LogWarning(ex, "Failed to delete QR image for ticket {TicketId}", t.TicketId); } catch { }
+                    }
                     await _ticketRepo.UpdateAsync(t);
                     // Release seat availability immediately (best effort)
                     try
