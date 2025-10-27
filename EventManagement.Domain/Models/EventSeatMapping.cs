@@ -17,6 +17,8 @@ public partial class EventSeatMapping
 
     public string? Additional { get; set; }
 
+    public byte[] RowVersion { get; set; } = null!;
+
     public virtual Event Event { get; set; } = null!;
 
     public virtual Seat Seat { get; set; } = null!;

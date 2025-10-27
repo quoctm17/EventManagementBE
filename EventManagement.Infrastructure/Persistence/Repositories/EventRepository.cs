@@ -141,5 +141,12 @@ namespace EventManagement.Infrastructure.Persistence.Repositories
                 .OrderBy(p => p)
                 .ToListAsync();
         }
+
+        public async Task<int> CountByOrganizerAsync(Guid organizerId)
+        {
+            return await _context.Events
+                .Where(e => e.OrganizerId == organizerId)
+                .CountAsync();
+        }
     }
 }

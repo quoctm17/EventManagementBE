@@ -32,7 +32,7 @@ namespace EventManagement.API.Controllers
 
                 return Ok(response);
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 var error = new HTTPResponseValue<string>(null, StatusResponse.Error, MessageResponse.Error);
                 return StatusCode(500, error);

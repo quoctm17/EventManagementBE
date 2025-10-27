@@ -23,7 +23,7 @@ namespace EventManagement.API.Controllers
 
 		[HttpGet("me")]
 		[Authorize]
-		public async Task<IActionResult> GetCurrentUser()
+		public async Task<ActionResult<HTTPResponseValue<UserResponseDTO>>> GetCurrentUser()
 		{
 			var authHeader = Request.Headers["Authorization"].FirstOrDefault();
 			if (string.IsNullOrEmpty(authHeader))
@@ -44,7 +44,7 @@ namespace EventManagement.API.Controllers
 				var success = new HTTPResponseValue<UserResponseDTO>(user, StatusResponse.Success, MessageResponse.Success);
 				return Ok(success);
 			}
-			catch (System.Exception)
+			catch (Exception)
 			{
 				var error = new HTTPResponseValue<string>(null, StatusResponse.Error, MessageResponse.Error);
 				return StatusCode(500, error);

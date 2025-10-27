@@ -17,5 +17,7 @@ public partial class Seat
 
     public virtual ICollection<EventSeatMapping> EventSeatMappings { get; set; } = new List<EventSeatMapping>();
 
+    public virtual ICollection<SeatHold> SeatHolds { get; set; } = new List<SeatHold>();
+
     public virtual Venue Venue { get; set; } = null!;
 }

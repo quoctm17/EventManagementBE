@@ -11,6 +11,9 @@ namespace EventManagement.Application.Helpers
             CreateMap<User, UserResponseDTO>()
                 .ForMember(dest => dest.Roles, opt => opt.Ignore());
 
+            // Role -> RoleResponseDTO
+            CreateMap<Role, RoleResponseDTO>();
+
             // Event -> RecommendedEventDto: most properties map by name automatically.
             CreateMap<Event, RecommendedEventDTO>()
                 // EventDate is DateOnly in domain and DateOnly in DTO — AutoMapper will map if types match.
@@ -39,7 +42,15 @@ namespace EventManagement.Application.Helpers
                 .ForMember(dest => dest.City, opt => opt.MapFrom(src => src.Province))
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.VenueImages.Where(i => i.IsMain == true).Select(i => i.ImageUrl).FirstOrDefault()));
 
-            // Ticket tiers are aggregated in the service layer (group by TicketCategory)
+            // EventSeatMapping -> EventSeatDTO
+            CreateMap<EventSeatMapping, EventSeatResponseDTO>()
+                .ForMember(dest => dest.SeatId, opt => opt.MapFrom(src => src.Seat.SeatId))
+                .ForMember(dest => dest.RowLabel, opt => opt.MapFrom(src => src.Seat.RowLabel))
+                .ForMember(dest => dest.SeatNumber, opt => opt.MapFrom(src => src.Seat.SeatNumber))
+                .ForMember(dest => dest.TicketCategory, opt => opt.MapFrom(src => src.TicketCategory))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price))
+                .ForMember(dest => dest.IsAvailable, opt => opt.MapFrom(src => src.IsAvailable != false))
+                .ForMember(dest => dest.IsHeld, opt => opt.Ignore());
         }
     }
 }

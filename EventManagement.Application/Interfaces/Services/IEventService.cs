@@ -9,5 +9,6 @@ namespace EventManagement.Application.Interfaces.Services
     {
         Task<PagedResult<EventListItemDTO>> GetEventsAsync(EventQueryRequestDTO query);
         Task<EventDetailDTO?> GetEventByIdAsync(Guid eventId);
+        Task<List<EventSeatResponseDTO>> GetEventSeatsAsync(Guid eventId);
     }
 }

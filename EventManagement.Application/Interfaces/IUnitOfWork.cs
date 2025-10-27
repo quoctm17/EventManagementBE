@@ -7,7 +7,6 @@ namespace EventManagement.Application.Interfaces
     {
         Task<int> SaveChangesAsync();
         int SaveChanges();
-
         Task BeginTransactionAsync();
         Task CommitTransactionAsync();
         Task RollbackTransactionAsync();

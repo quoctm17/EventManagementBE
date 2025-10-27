@@ -15,6 +15,8 @@ namespace EventManagement.Application.Services
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJwtAuthService _jwtAuthService;
     private readonly IUserRoleRepository _userRoleRepo;
+    private readonly ITicketRepository _ticketRepo;
+    private readonly IEventRepository _eventRepo;
     private readonly AutoMapper.IMapper _mapper;
 
         public UserService(
@@ -22,12 +24,16 @@ namespace EventManagement.Application.Services
             IUnitOfWork unitOfWork,
             IJwtAuthService jwtAuthService,
             IUserRoleRepository userRoleRepo,
+            ITicketRepository ticketRepo,
+            IEventRepository eventRepo,
             AutoMapper.IMapper mapper)
         {
             _userRepo = userRepo;
             _unitOfWork = unitOfWork;
             _jwtAuthService = jwtAuthService;
             _userRoleRepo = userRoleRepo;
+            _ticketRepo = ticketRepo;
+            _eventRepo = eventRepo;
             _mapper = mapper;
         }
 
@@ -72,6 +78,10 @@ namespace EventManagement.Application.Services
             var userResponse = _mapper.Map<UserResponseDTO>(user);
             var roles = await _userRoleRepo.GetRolesByUserIdAsync(user.UserId);
             userResponse.Roles = roles.ToList();
+
+            // Compute counts
+            userResponse.TicketsPurchasedCount = await _ticketRepo.CountByAttendeeAsync(user.UserId);
+            userResponse.EventsCreatedCount = await _eventRepo.CountByOrganizerAsync(user.UserId);
             return userResponse;
         }
     }

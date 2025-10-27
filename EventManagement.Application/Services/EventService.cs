@@ -6,6 +6,8 @@ using EventManagement.Application.DTOs.Requests;
 using EventManagement.Application.DTOs.Responses;
 using EventManagement.Application.Interfaces.Repositories;
 using EventManagement.Application.Interfaces.Services;
+using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 
 namespace EventManagement.Application.Services
 {
@@ -15,13 +17,17 @@ namespace EventManagement.Application.Services
         private readonly IEventSeatMappingRepository _seatMappingRepository;
         private readonly IMapper _mapper;
         private readonly ICategoryRepository _categoryRepository;
+    private readonly ISeatHoldRepository _seatHoldRepository;
+    private readonly IConfiguration _config;
 
-        public EventService(IEventRepository eventRepository, IEventSeatMappingRepository seatMappingRepository, ICategoryRepository categoryRepository, IMapper mapper)
+        public EventService(IEventRepository eventRepository, IEventSeatMappingRepository seatMappingRepository, ICategoryRepository categoryRepository, ISeatHoldRepository seatHoldRepository, IMapper mapper, IConfiguration config)
         {
             _eventRepository = eventRepository;
             _seatMappingRepository = seatMappingRepository;
             _categoryRepository = categoryRepository;
+            _seatHoldRepository = seatHoldRepository;
             _mapper = mapper;
+            _config = config;
         }
 
         public async Task<PagedResult<EventListItemDTO>> GetEventsAsync(EventQueryRequestDTO query)
@@ -29,6 +35,16 @@ namespace EventManagement.Application.Services
             var (items, total) = await _eventRepository.GetPagedEventsAsync(query.Page, query.PageSize, query.Search, query.Province, query.CategoryIds, query.Date, query.PriceMin, query.PriceMax, query.SortBy);
 
             var dtoItems = items.Select(e => _mapper.Map<EventListItemDTO>(e)).ToList();
+
+            // Compute OrderPendingExpires based on config (Reservation:OrderPendingExpiresMinutes)
+            var pendingMinutes = 10;
+            var raw = _config["Reservation:OrderPendingExpiresMinutes"];
+            if (int.TryParse(raw, out var conf) && conf > 0) pendingMinutes = conf;
+            var nowUtc = DateTime.UtcNow;
+            foreach (var d in dtoItems)
+            {
+                d.OrderPendingExpires = nowUtc.AddMinutes(pendingMinutes);
+            }
 
             // Populate starting prices
             var ids = dtoItems.Select(d => d.EventId).ToList();
@@ -89,7 +105,36 @@ namespace EventManagement.Application.Services
                 dto.TicketTiers = tiers;
             }
 
+            // Compute OrderPendingExpires for detail
+            var pendingMinutes = 10;
+            var raw = _config["Reservation:OrderPendingExpiresMinutes"];
+            if (int.TryParse(raw, out var conf) && conf > 0) pendingMinutes = conf;
+            dto.OrderPendingExpires = DateTime.UtcNow.AddMinutes(pendingMinutes);
+
             return dto;
+        }
+
+        public async Task<List<EventSeatResponseDTO>> GetEventSeatsAsync(Guid eventId)
+        {
+            var mappings = await _seatMappingRepository.GetByEventIdWithSeatAsync(eventId);
+            var seats = mappings
+                .Where(m => m.Seat != null)
+                .Select(m => _mapper.Map<EventSeatResponseDTO>(m))
+                .OrderBy(s => s.RowLabel)
+                .ThenBy(s => s.SeatNumber)
+                .ToList();
+
+            if (seats.Count == 0) return seats;
+
+            // Compute IsHeld only for seats that are available
+            var nowUtc = DateTime.UtcNow;
+            var activeHeldSeatIds = await _seatHoldRepository.GetActiveHeldSeatIdsAsync(eventId, nowUtc);
+
+            foreach (var seat in seats)
+            {
+                seat.IsHeld = seat.IsAvailable && activeHeldSeatIds.Contains(seat.SeatId);
+            }
+            return seats;
         }
     }
 }

@@ -14,6 +14,7 @@ namespace EventManagement.Application.Services
         private readonly string _key;
         private readonly string _issuer;
         private readonly string _audience;
+        private readonly int _accessTokenDays;
         private readonly IUserRoleRepository _userRoleRepo;
 
         public JwtAuthService(IConfiguration configuration, IUserRoleRepository userRoleRepo)
@@ -21,6 +22,7 @@ namespace EventManagement.Application.Services
             _key = configuration["Jwt:Secret-Key"] ?? throw new ArgumentNullException("JWT Secret-Key not found");
             _issuer = configuration["Jwt:Issuer"] ?? throw new ArgumentNullException("JWT Issuer not found");
             _audience = configuration["Jwt:Audience"] ?? throw new ArgumentNullException("JWT Audience not found");
+            _accessTokenDays = int.TryParse(configuration["Jwt:AccessTokenDays"], out var d) ? d : 1;
             _userRoleRepo = userRoleRepo;
         }
 
@@ -49,7 +51,7 @@ namespace EventManagement.Application.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddDays(1),
+                Expires = DateTime.UtcNow.AddDays(_accessTokenDays),
                 SigningCredentials = creds,
                 Issuer = _issuer,
                 Audience = _audience,
@@ -73,6 +75,35 @@ namespace EventManagement.Application.Services
                 throw new InvalidOperationException("Không tìm thấy UserName trong token");
 
             return usernameClaim.Value;
+        }
+
+        public bool ValidateToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token)) return false;
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var keyBytes = Encoding.ASCII.GetBytes(_key);
+
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateIssuerSigningKey = true,
+                ValidateLifetime = true,
+                ValidIssuer = _issuer,
+                ValidAudience = _audience,
+                IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+            };
+
+            try
+            {
+                tokenHandler.ValidateToken(token, validationParameters, out var _);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

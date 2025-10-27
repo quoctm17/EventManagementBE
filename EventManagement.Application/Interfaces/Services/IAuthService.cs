@@ -8,5 +8,6 @@ namespace EventManagement.Application.Interfaces.Services
     {
         Task<AuthResponseDTO> LoginAsync(UserLoginRequestDTO request);
         Task<bool> RegisterAsync(UserRegisterRequestDTO request);
+        Task<bool> ValidateTokenAsync(string token);
     }
 }

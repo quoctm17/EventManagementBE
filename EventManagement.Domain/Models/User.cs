@@ -21,6 +21,8 @@ public partial class User
 
     public DateOnly? Birthdate { get; set; }
 
+    public string? Description { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public bool? IsActive { get; set; }
@@ -44,6 +46,8 @@ public partial class User
     public virtual ICollection<OrganizerRequest> OrganizerRequestProcessedByNavigations { get; set; } = new List<OrganizerRequest>();
 
     public virtual ICollection<OrganizerRequest> OrganizerRequestUsers { get; set; } = new List<OrganizerRequest>();
+
+    public virtual ICollection<SeatHold> SeatHolds { get; set; } = new List<SeatHold>();
 
     public virtual ICollection<Settlement> Settlements { get; set; } = new List<Settlement>();
 
