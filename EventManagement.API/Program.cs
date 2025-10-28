@@ -15,6 +15,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using EventManagement.Application.Services.BackgroundService;
+using Microsoft.AspNetCore.SignalR;
+using EventManagement.API.Hubs;
+using EventManagement.API.Realtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,6 +72,10 @@ builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 // Hosted Services
 builder.Services.AddHostedService<CleanupService>();
+
+// SignalR
+builder.Services.AddSignalR();
+builder.Services.AddScoped<ISeatRealtimeService, SeatRealtimeHubService>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -145,6 +152,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Hubs
+app.MapHub<SeatHub>("/hubs/seats");
 
 
 app.Run();

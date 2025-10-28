@@ -30,6 +30,7 @@ namespace EventManagement.Application.Services
         private readonly IUserRepository _userRepo;
         private readonly IConfiguration _configuration;
         private readonly ILogger<OrderService> _logger;
+    private readonly ISeatRealtimeService _realtime;
 
         public OrderService(
             IOrderRepository orderRepo,
@@ -45,7 +46,8 @@ namespace EventManagement.Application.Services
             ICloudinaryService cloudinaryService,
             IEmailService emailService,
             IUserRepository userRepo,
-            ILogger<OrderService> logger)
+            ILogger<OrderService> logger,
+            ISeatRealtimeService realtime)
         {
             _orderRepo = orderRepo;
             _ticketRepo = ticketRepo;
@@ -61,6 +63,7 @@ namespace EventManagement.Application.Services
             _emailService = emailService;
             _userRepo = userRepo;
             _logger = logger;
+            _realtime = realtime;
         }
 
         public async Task<IEnumerable<OrderResponseDTO>> GetCurrentUserOrdersAsync(string token)
@@ -283,6 +286,9 @@ namespace EventManagement.Application.Services
                 // Ensure all changes are persisted before commit
                 await _uow.SaveChangesAsync();
                 await _uow.CommitTransactionAsync();
+
+                // Realtime: notify seats unavailable due to pending order
+                try { await _realtime.SeatsUnavailable(request.EventId, request.SeatIds, order.OrderPendingExpires); } catch { }
 
                 return new CreateOrderResponseDTO
                 {
@@ -671,6 +677,7 @@ namespace EventManagement.Application.Services
                 await _orderRepo.UpdateAsync(order);
 
                 var tickets = await _ticketRepo.GetTicketsByOrderIdAsync(order.OrderId);
+                var releasedSeatIds = tickets.Select(t => t.SeatId).Distinct().ToList();
                 foreach (var t in tickets)
                 {
                     t.Status = TicketStatus.Cancelled;
@@ -703,6 +710,16 @@ namespace EventManagement.Application.Services
 
                 await _uow.SaveChangesAsync();
                 await _uow.CommitTransactionAsync();
+                // Realtime: notify seats released
+                try
+                {
+                    var eventId = tickets.FirstOrDefault()?.EventId ?? Guid.Empty;
+                    if (eventId != Guid.Empty && releasedSeatIds.Count > 0)
+                    {
+                        await _realtime.SeatsReleased(eventId, releasedSeatIds);
+                    }
+                }
+                catch { }
                 return true;
             }
             catch
@@ -774,7 +791,7 @@ namespace EventManagement.Application.Services
                 if (ev != null)
                 {
                     sb.Append($"<div style='margin:6px 0'><b>Sự kiện:</b> {System.Net.WebUtility.HtmlEncode(ev.EventName)}</div>");
-                    var dtStr = ev.StartTime.ToLocalTime().ToString("HH:mm dd/MM/yyyy");
+                    var dtStr = ev.EventStartTime.ToLocalTime().ToString("HH:mm dd/MM/yyyy");
                     sb.Append($"<div style='margin:6px 0'><b>Thời gian:</b> {dtStr}</div>");
                 }
                 if (venue != null)

@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using EventManagement.Application.Interfaces.Services;
 
 namespace EventManagement.Application.Services.BackgroundService
 {
@@ -71,11 +72,15 @@ namespace EventManagement.Application.Services.BackgroundService
 			var ticketRepo = scope.ServiceProvider.GetRequiredService<ITicketRepository>();
 			var seatMappingRepo = scope.ServiceProvider.GetRequiredService<IEventSeatMappingRepository>();
 			var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+			var realtime = scope.ServiceProvider.GetService<ISeatRealtimeService>();
 
 			var now = DateTime.UtcNow;
 
 			// 1) Remove expired SeatHolds
 			var expiredHolds = (await seatHoldRepo.WhereAsync(h => h.HoldExpiresAt <= now)).ToList();
+			var releasedFromHolds = expiredHolds
+				.GroupBy(h => h.EventId)
+				.ToDictionary(g => g.Key, g => g.Select(x => x.SeatId).Distinct().ToList());
 			foreach (var h in expiredHolds)
 			{
 				ct.ThrowIfCancellationRequested();
@@ -109,6 +114,7 @@ namespace EventManagement.Application.Services.BackgroundService
 
 			// 3) Release seats: set IsAvailable = true for seats in cancelled orders
 			var releasedCount = 0;
+			var releasedByEvent = new Dictionary<Guid, HashSet<Guid>>();
 			foreach (var order in expiredOrders)
 			{
 				var tickets = await ticketRepo.GetTicketsByOrderIdAsync(order.OrderId);
@@ -126,6 +132,12 @@ namespace EventManagement.Application.Services.BackgroundService
 					{
 						await uow.SaveChangesAsync();
 						releasedCount++;
+						if (!releasedByEvent.TryGetValue(mapping.EventId, out var set))
+						{
+							set = new HashSet<Guid>();
+							releasedByEvent[mapping.EventId] = set;
+						}
+						set.Add(mapping.SeatId);
 					}
 					catch (DbUpdateConcurrencyException ex)
 					{
@@ -138,6 +150,25 @@ namespace EventManagement.Application.Services.BackgroundService
 			if (expiredHolds.Count > 0 || expiredOrders.Count > 0 || releasedCount > 0)
 			{
 				_logger.LogInformation("CleanupService removed {HoldCount} holds; cancelled {OrderCount} orders; released {SeatCount} seats", expiredHolds.Count, expiredOrders.Count, releasedCount);
+			}
+
+			// Realtime notifications (non-blocking)
+			if (realtime != null)
+			{
+				try
+				{
+					foreach (var kv in releasedFromHolds)
+					{
+						if (kv.Value.Count > 0)
+							await realtime.SeatsReleased(kv.Key, kv.Value);
+					}
+					foreach (var kv in releasedByEvent)
+					{
+						if (kv.Value.Count > 0)
+							await realtime.SeatsReleased(kv.Key, kv.Value);
+					}
+				}
+				catch { }
 			}
 		}
 	}

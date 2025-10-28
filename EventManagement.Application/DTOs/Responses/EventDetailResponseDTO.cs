@@ -10,8 +10,12 @@ namespace EventManagement.Application.DTOs.Responses
         public string EventName { get; set; } = null!;
         public string Description { get; set; } = null!;
         public DateOnly EventDate { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
+        // Sale window
+        public DateTime SaleStartTime { get; set; }
+        public DateTime SaleEndTime { get; set; }
+        // Actual event time window
+        public DateTime EventStartTime { get; set; }
+        public DateTime EventEndTime { get; set; }
         public DateTime? OrderPendingExpires { get; set; }
         public string VenueName { get; set; } = null!;
         public string VenueAddress { get; set; } = null!;

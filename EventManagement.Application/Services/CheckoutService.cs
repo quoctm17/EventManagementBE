@@ -19,6 +19,8 @@ namespace EventManagement.Application.Services
         private readonly IEventSeatMappingRepository _seatMappingRepo;
         private readonly ISeatHoldRepository _seatHoldRepo;
         private readonly IPaymentService _paymentService;
+        private readonly IUserService _userService;
+        private readonly ISeatRealtimeService _realtime;
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _uow;
         private readonly IConfiguration _config;
@@ -28,6 +30,8 @@ namespace EventManagement.Application.Services
             IEventSeatMappingRepository seatMappingRepo,
             ISeatHoldRepository seatHoldRepo,
             IPaymentService paymentService,
+            IUserService userService,
+            ISeatRealtimeService realtime,
             IMapper mapper,
             IUnitOfWork uow,
             IConfiguration config)
@@ -36,6 +40,8 @@ namespace EventManagement.Application.Services
             _seatMappingRepo = seatMappingRepo;
             _seatHoldRepo = seatHoldRepo;
             _paymentService = paymentService;
+            _userService = userService;
+            _realtime = realtime;
             _mapper = mapper;
             _uow = uow;
             _config = config;
@@ -43,7 +49,7 @@ namespace EventManagement.Application.Services
 
         public async Task<CheckoutPrepareResponseDTO> PrepareAsync(string authHeader, CheckoutPrepareRequestDTO request)
         {
-            if (request == null || request.EventId == Guid.Empty || request.SeatIds == null || request.SeatIds.Count == 0)
+            if (request == null || request.UserId == Guid.Empty || request.EventId == Guid.Empty || request.SeatIds == null || request.SeatIds.Count == 0)
                 throw new InvalidOperationException("Invalid request");
 
             // Extract user id from JWT (required for SeatHold)
@@ -61,6 +67,15 @@ namespace EventManagement.Application.Services
             }
             var subClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
             if (subClaim == null || !Guid.TryParse(subClaim.Value, out var userGuid)) throw new InvalidOperationException("Unauthorized");
+
+            // Validate the provided userId matches token subject to prevent spoofing
+            if (request.UserId != userGuid)
+                throw new InvalidOperationException("Unauthorized");
+
+            // Load user info to include in response
+            var userDto = await _userService.GetCurrentUserAsync(authHeader);
+            if (userDto == null || userDto.UserId == Guid.Empty)
+                throw new InvalidOperationException("Unauthorized");
 
             // Load event details
             var ev = await _eventRepo.GetEventWithDetailsAsync(request.EventId);
@@ -123,7 +138,7 @@ namespace EventManagement.Application.Services
                         HoldId = Guid.NewGuid(),
                         EventId = request.EventId,
                         SeatId = m.SeatId,
-                        UserId = userGuid,
+                        UserId = request.UserId,
                         HoldExpiresAt = nowUtc.AddMinutes(seatHoldMinutes),
                         OrderId = null
                     };
@@ -145,11 +160,19 @@ namespace EventManagement.Application.Services
                 s.IsHeld = true;
             }
 
+            // Broadcast realtime notification (non-blocking)
+            try
+            {
+                await _realtime.SeatsHeld(request.EventId, seatIds, nowUtc.AddMinutes(seatHoldMinutes));
+            }
+            catch { }
+
             // Payment methods
             var paymentMethods = (await _paymentService.GetPaymentMethodsAsync(true)).ToList();
 
             return new CheckoutPrepareResponseDTO
             {
+                User = userDto,
                 Event = evDto,
                 SelectedSeats = seatDtos,
                 TotalAmount = total,

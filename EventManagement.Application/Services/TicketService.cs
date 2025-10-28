@@ -50,8 +50,12 @@ namespace EventManagement.Application.Services
                         EventId = g.Key,
                         EventName = ev.EventName,
                         EventDate = ev.EventDate,
-                        StartTime = ev.StartTime,
-                        EndTime = ev.EndTime,
+                        // Sale window
+                        SaleStartTime = ev.SaleStartTime,
+                        SaleEndTime = ev.SaleEndTime,
+                        // Actual event time window
+                        EventStartTime = ev.EventStartTime,
+                        EventEndTime = ev.EventEndTime,
                         CoverImageUrl = ev.CoverImageUrl,
                         VenueName = ev.Venue?.VenueName ?? string.Empty,
                         VenueProvince = ev.Venue?.Province ?? string.Empty,
@@ -77,7 +81,7 @@ namespace EventManagement.Application.Services
                     };
                 })
                 .OrderBy(e => e.EventDate)
-                .ThenBy(e => e.StartTime)
+                .ThenBy(e => e.EventStartTime)
                 .ToList();
 
             return grouped;

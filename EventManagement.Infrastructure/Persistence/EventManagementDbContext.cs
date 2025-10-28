@@ -70,9 +70,9 @@ public partial class EventManagementDbContext : DbContext
     {
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.CategoryId).HasName("PK__Categori__19093A0BFD78EA06");
+            entity.HasKey(e => e.CategoryId).HasName("PK__Categori__19093A0B610CC9BB");
 
-            entity.HasIndex(e => e.CategoryName, "UQ__Categori__8517B2E072E126A2").IsUnique();
+            entity.HasIndex(e => e.CategoryName, "UQ__Categori__8517B2E06AB95F21").IsUnique();
 
             entity.Property(e => e.CategoryId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CategoryName).HasMaxLength(100);
@@ -81,7 +81,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<Checkin>(entity =>
         {
-            entity.HasKey(e => e.CheckinId).HasName("PK__Checkins__F3C85D71E6A40333");
+            entity.HasKey(e => e.CheckinId).HasName("PK__Checkins__F3C85D71BB590591");
 
             entity.Property(e => e.CheckinId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CheckinTime).HasDefaultValueSql("(sysdatetime())");
@@ -99,7 +99,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<Contract>(entity =>
         {
-            entity.HasKey(e => e.ContractId).HasName("PK__Contract__C90D3469AADA6038");
+            entity.HasKey(e => e.ContractId).HasName("PK__Contract__C90D34692DC3F6F3");
 
             entity.Property(e => e.ContractId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.ContractFileUrl).HasMaxLength(500);
@@ -121,7 +121,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<Event>(entity =>
         {
-            entity.HasKey(e => e.EventId).HasName("PK__Events__7944C810059E1BD3");
+            entity.HasKey(e => e.EventId).HasName("PK__Events__7944C8106D79A1C7");
 
             entity.Property(e => e.EventId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CoverImageUrl).HasMaxLength(500);
@@ -155,14 +155,14 @@ public partial class EventManagementDbContext : DbContext
                         .HasConstraintName("FK_EventCategories_Event"),
                     j =>
                     {
-                        j.HasKey("EventId", "CategoryId").HasName("PK__EventCat__D8D45BB0B57664AF");
+                        j.HasKey("EventId", "CategoryId").HasName("PK__EventCat__D8D45BB06690520D");
                         j.ToTable("EventCategories");
                     });
         });
 
         modelBuilder.Entity<EventImage>(entity =>
         {
-            entity.HasKey(e => e.ImageId).HasName("PK__EventIma__7516F70CDC4010B5");
+            entity.HasKey(e => e.ImageId).HasName("PK__EventIma__7516F70CD2958F58");
 
             entity.Property(e => e.ImageId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Caption).HasMaxLength(200);
@@ -177,7 +177,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<EventSeatMapping>(entity =>
         {
-            entity.HasKey(e => new { e.EventId, e.SeatId }).HasName("PK__EventSea__5A55B92FCEE4B4F7");
+            entity.HasKey(e => new { e.EventId, e.SeatId }).HasName("PK__EventSea__5A55B92F1F3702D3");
 
             entity.ToTable("EventSeatMapping");
 
@@ -201,7 +201,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<EventStaff>(entity =>
         {
-            entity.HasKey(e => new { e.EventId, e.UserId }).HasName("PK__EventSta__A83C44D4E0BA8B44");
+            entity.HasKey(e => new { e.EventId, e.UserId }).HasName("PK__EventSta__A83C44D4E5AA1825");
 
             entity.Property(e => e.AssignedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
@@ -224,7 +224,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E12837184A0");
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E12001A5C7D");
 
             entity.Property(e => e.NotificationId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.NotificationType).HasMaxLength(20);
@@ -245,7 +245,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<Order>(entity =>
         {
-            entity.HasKey(e => e.OrderId).HasName("PK__Orders__C3905BCF19B8255C");
+            entity.HasKey(e => e.OrderId).HasName("PK__Orders__C3905BCFA3E3C823");
 
             entity.Property(e => e.OrderId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
@@ -262,7 +262,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<OrganizerRequest>(entity =>
         {
-            entity.HasKey(e => e.RequestId).HasName("PK__Organize__33A8517A9FE6E499");
+            entity.HasKey(e => e.RequestId).HasName("PK__Organize__33A8517A49BF97FD");
 
             entity.Property(e => e.RequestId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Reason).HasMaxLength(500);
@@ -283,7 +283,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<Payment>(entity =>
         {
-            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A38E3682B51");
+            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A388CD37C72");
 
             entity.Property(e => e.PaymentId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
@@ -304,7 +304,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<PaymentMethod>(entity =>
         {
-            entity.HasKey(e => e.PaymentMethodId).HasName("PK__PaymentM__DC31C1D39821ED37");
+            entity.HasKey(e => e.PaymentMethodId).HasName("PK__PaymentM__DC31C1D32DE2BA98");
 
             entity.Property(e => e.PaymentMethodId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.GatewayKey).HasMaxLength(100);
@@ -315,9 +315,9 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1AEAC099B0");
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A9E294E3A");
 
-            entity.HasIndex(e => e.RoleName, "UQ__Roles__8A2B6160CDDB2215").IsUnique();
+            entity.HasIndex(e => e.RoleName, "UQ__Roles__8A2B6160C13B632E").IsUnique();
 
             entity.Property(e => e.RoleId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.RoleName).HasMaxLength(50);
@@ -325,7 +325,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<Seat>(entity =>
         {
-            entity.HasKey(e => e.SeatId).HasName("PK__Seats__311713F35E49EEE3");
+            entity.HasKey(e => e.SeatId).HasName("PK__Seats__311713F3334890C3");
 
             entity.HasIndex(e => new { e.VenueId, e.RowLabel, e.SeatNumber }, "UQ_Seats").IsUnique();
 
@@ -340,7 +340,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<SeatHold>(entity =>
         {
-            entity.HasKey(e => e.HoldId).HasName("PK__SeatHold__6E24D9C441EB94C1");
+            entity.HasKey(e => e.HoldId).HasName("PK__SeatHold__6E24D9C4A567F6F9");
 
             entity.HasIndex(e => new { e.EventId, e.SeatId }, "UQ_Hold").IsUnique();
 
@@ -368,7 +368,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<Settlement>(entity =>
         {
-            entity.HasKey(e => e.SettlementId).HasName("PK__Settleme__7712545A81733A2E");
+            entity.HasKey(e => e.SettlementId).HasName("PK__Settleme__7712545A6D58CD87");
 
             entity.Property(e => e.SettlementId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CommissionFee).HasColumnType("decimal(18, 2)");
@@ -392,9 +392,9 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<SystemConfig>(entity =>
         {
-            entity.HasKey(e => e.ConfigId).HasName("PK__SystemCo__C3BC335C38E7A176");
+            entity.HasKey(e => e.ConfigId).HasName("PK__SystemCo__C3BC335CBD84EB2B");
 
-            entity.HasIndex(e => e.ConfigKey, "UQ__SystemCo__4A306784A598985B").IsUnique();
+            entity.HasIndex(e => e.ConfigKey, "UQ__SystemCo__4A30678492FE59AA").IsUnique();
 
             entity.Property(e => e.ConfigId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.ConfigKey).HasMaxLength(100);
@@ -403,7 +403,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<SystemLog>(entity =>
         {
-            entity.HasKey(e => e.LogId).HasName("PK__SystemLo__5E54864865FD05EC");
+            entity.HasKey(e => e.LogId).HasName("PK__SystemLo__5E5486486B1763CD");
 
             entity.Property(e => e.LogId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Action).HasMaxLength(255);
@@ -416,7 +416,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<Ticket>(entity =>
         {
-            entity.HasKey(e => e.TicketId).HasName("PK__Tickets__712CC6077F9FDFAD");
+            entity.HasKey(e => e.TicketId).HasName("PK__Tickets__712CC6072D15B9F3");
 
             entity.Property(e => e.TicketId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
@@ -446,9 +446,9 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C347B43D4");
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C57D53E51");
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534FD38623A").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534597C8442").IsUnique();
 
             entity.Property(e => e.UserId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Address).HasMaxLength(300);
@@ -464,7 +464,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<UserRole>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.RoleId }).HasName("PK__UserRole__AF2760AD1A716729");
+            entity.HasKey(e => new { e.UserId, e.RoleId }).HasName("PK__UserRole__AF2760AD658D3281");
 
             entity.Property(e => e.AssignedAt).HasDefaultValueSql("(sysdatetime())");
 
@@ -481,7 +481,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<Venue>(entity =>
         {
-            entity.HasKey(e => e.VenueId).HasName("PK__Venues__3C57E5F252F48C23");
+            entity.HasKey(e => e.VenueId).HasName("PK__Venues__3C57E5F2DCA53C4A");
 
             entity.Property(e => e.VenueId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Address).HasMaxLength(300);
@@ -494,7 +494,7 @@ public partial class EventManagementDbContext : DbContext
 
         modelBuilder.Entity<VenueImage>(entity =>
         {
-            entity.HasKey(e => e.ImageId).HasName("PK__VenueIma__7516F70C1CE7AF52");
+            entity.HasKey(e => e.ImageId).HasName("PK__VenueIma__7516F70CE05B927B");
 
             entity.Property(e => e.ImageId).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Caption).HasMaxLength(200);

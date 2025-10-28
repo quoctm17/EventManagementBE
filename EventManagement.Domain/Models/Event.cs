@@ -15,11 +15,15 @@ public partial class Event
 
     public string? Description { get; set; }
 
-    public DateTime StartTime { get; set; }
+    public DateTime SaleStartTime { get; set; }
 
-    public DateTime EndTime { get; set; }
+    public DateTime SaleEndTime { get; set; }
 
     public DateOnly EventDate { get; set; }
+
+    public DateTime EventStartTime { get; set; }
+
+    public DateTime EventEndTime { get; set; }
 
     public string? CoverImageUrl { get; set; }
 
