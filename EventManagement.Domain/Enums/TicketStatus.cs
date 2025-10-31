@@ -6,6 +6,7 @@ namespace EventManagement.Domain.Enums
         public const string Issued    = "Issued";
         public const string Cancelled = "Cancelled";
         public const string Refunded  = "Refunded";
+        public const string PendingRefund = "PendingRefund";
         public const string CheckedIn = "CheckedIn";
         public const string NoShow    = "NoShow";
     }

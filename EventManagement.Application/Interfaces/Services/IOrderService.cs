@@ -11,13 +11,14 @@ namespace EventManagement.Application.Interfaces.Services
     {
         Task<IEnumerable<OrderResponseDTO>> GetCurrentUserOrdersAsync(string token);
         Task<OrderResponseDTO?> GetOrderByIdAsync(Guid orderId);
+        Task<OrderDetailResponseDTO?> GetOrderDetailAsync(string authHeader, Guid orderId);
         Task<CreateOrderResponseDTO> CreateOrderAsync(string authHeader, CreateOrderRequestDTO request);
         // Handle provider webhook (moved from PaymentService to avoid circular dependency)
         Task<bool> HandlePay2SWebhookAsync(Pay2SWebhookRequestDTO payload);
         // Handle Pay2S IPN (gateway callback)
         Task<bool> HandlePay2SIpnAsync(Pay2SIpnRequestDTO payload);
 
-        // Manual cancel endpoint: cancel a pending order/payment initiated by FE when user abandons checkout
-        Task<bool> CancelPendingOrderAsync(string authHeader, ManualCancelRequestDTO request);
+        // Handle redirect/return cancel from gateway (FE posts the params to backend)
+        Task<bool> HandleGatewayReturnCancelAsync(CancelOrderRequestDTO payload);
     }
 }

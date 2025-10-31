@@ -31,6 +31,8 @@ namespace EventManagement.Application.Services
         private readonly IConfiguration _configuration;
         private readonly ILogger<OrderService> _logger;
     private readonly ISeatRealtimeService _realtime;
+        private readonly ITransactionRepository _txnRepo;
+    private readonly IRefundRequestRepository _refundRepo;
 
         public OrderService(
             IOrderRepository orderRepo,
@@ -47,7 +49,9 @@ namespace EventManagement.Application.Services
             IEmailService emailService,
             IUserRepository userRepo,
             ILogger<OrderService> logger,
-            ISeatRealtimeService realtime)
+            ISeatRealtimeService realtime,
+            ITransactionRepository txnRepo,
+            IRefundRequestRepository refundRepo)
         {
             _orderRepo = orderRepo;
             _ticketRepo = ticketRepo;
@@ -64,6 +68,8 @@ namespace EventManagement.Application.Services
             _userRepo = userRepo;
             _logger = logger;
             _realtime = realtime;
+            _txnRepo = txnRepo;
+            _refundRepo = refundRepo;
         }
 
         public async Task<IEnumerable<OrderResponseDTO>> GetCurrentUserOrdersAsync(string token)
@@ -148,6 +154,131 @@ namespace EventManagement.Application.Services
 
             return dto;
         }
+
+        public async Task<OrderDetailResponseDTO?> GetOrderDetailAsync(string authHeader, Guid orderId)
+        {
+            if (string.IsNullOrEmpty(authHeader)) throw new InvalidOperationException("Unauthorized");
+            var token = authHeader.StartsWith("Bearer ") ? authHeader.Substring("Bearer ".Length).Trim() : authHeader;
+            System.IdentityModel.Tokens.Jwt.JwtSecurityToken jwtToken;
+            try
+            {
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                jwtToken = handler.ReadJwtToken(token);
+            }
+            catch { throw new InvalidOperationException("Unauthorized"); }
+
+            var subClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+            if (subClaim == null || !Guid.TryParse(subClaim.Value, out var userId)) throw new InvalidOperationException("Unauthorized");
+
+            var order = await _orderRepo.GetByIdAsync(orderId);
+            if (order == null) return null;
+            if (order.UserId != userId) throw new InvalidOperationException("Forbidden");
+
+            // Tickets with seat and event info (read-only)
+            var tickets = await _ticketRepo.GetTicketsByOrderIdAsync(orderId);
+
+            // Event info from first ticket
+            EventBasicDTO? evDto = null;
+            var first = tickets.FirstOrDefault();
+            var ev = first?.EventSeatMapping?.Event;
+            if (ev != null)
+            {
+                evDto = new EventBasicDTO
+                {
+                    EventId = ev.EventId,
+                    EventName = ev.EventName,
+                    Description = ev.Description,
+                    SaleStartTime = ev.SaleStartTime,
+                    SaleEndTime = ev.SaleEndTime,
+                    EventStartTime = ev.EventStartTime,
+                    EventEndTime = ev.EventEndTime,
+                    VenueName = ev.Venue?.VenueName ?? string.Empty,
+                    VenueAddress = ev.Venue?.Address ?? string.Empty,
+                    VenueProvince = ev.Venue?.Province ?? string.Empty,
+                    CoverImageUrl = ev.CoverImageUrl,
+                    Status = ev.Status
+                };
+            }
+
+            // Payments + method names
+            var payments = await _paymentRepo.WhereAsync(p => p.OrderId == orderId);
+            var paymentDtos = new List<PaymentResponseDTO>();
+            foreach (var p in payments)
+            {
+                string? method = p.PaymentMethod?.MethodName;
+                if (method == null)
+                {
+                    var pm = await _paymentMethodRepo.GetByIdAsync(p.PaymentMethodId);
+                    method = pm?.MethodName;
+                }
+                paymentDtos.Add(new PaymentResponseDTO
+                {
+                    PaymentId = p.PaymentId,
+                    OrderId = p.OrderId,
+                    PaymentMethodId = p.PaymentMethodId,
+                    MethodName = method,
+                    Amount = p.Amount,
+                    Status = p.Status,
+                    TransactionDate = p.TransactionDate,
+                    TransactionRef = p.TransactionRef,
+                    Additional = p.Additional
+                });
+            }
+
+            // Refund requests for this order
+            var rrs = await _refundRepo.WhereAsync(r => r.OrderId == orderId);
+            var rrDtos = rrs.Select(rr => new RefundRequestResponseDTO
+            {
+                RefundRequestId = rr.RefundRequestId,
+                OrderId = rr.OrderId,
+                UserId = rr.UserId,
+                BankAccountId = rr.BankAccountId,
+                BankName = rr.BankName,
+                AccountNumber = rr.AccountNumber,
+                AccountHolderName = rr.AccountHolderName,
+                Amount = rr.Amount,
+                Status = rr.Status,
+                Reason = rr.Reason,
+                AdminNote = rr.AdminNote,
+                ReceiptImageUrl = rr.ReceiptImageUrl,
+                CreatedAt = rr.CreatedAt,
+                ProcessedAt = rr.ProcessedAt,
+                ProcessedBy = rr.ProcessedBy
+            }).ToList();
+
+            // Ticket DTOs with seat label/category
+            var ticketDtos = tickets.Select(t => new TicketResponseDTO
+            {
+                TicketId = t.TicketId,
+                OrderId = t.OrderId,
+                EventId = t.EventId,
+                SeatId = t.SeatId,
+                Price = t.Price,
+                AttendeeId = t.AttendeeId,
+                Qrcode = t.Qrcode,
+                QrImageUrl = t.QrImageUrl,
+                PurchaseDate = t.PurchaseDate,
+                Status = t.Status,
+                Additional = t.Additional,
+                TicketCategory = t.EventSeatMapping?.TicketCategory,
+                SeatLabel = t.EventSeatMapping?.Seat != null ? $"{t.EventSeatMapping.Seat.RowLabel}-{t.EventSeatMapping.Seat.SeatNumber}" : null
+            }).ToList();
+
+            return new OrderDetailResponseDTO
+            {
+                OrderId = order.OrderId,
+                UserId = order.UserId,
+                TotalAmount = order.TotalAmount,
+                Status = order.Status,
+                CreatedAt = order.CreatedAt,
+                Additional = order.Additional,
+                Event = evDto,
+                Tickets = ticketDtos,
+                Payments = paymentDtos,
+                RefundRequests = rrDtos
+            };
+        }
+
 
         public async Task<CreateOrderResponseDTO> CreateOrderAsync(string authHeader, CreateOrderRequestDTO request)
         {
@@ -350,7 +481,7 @@ namespace EventManagement.Application.Services
                 };
                 var addJson = System.Text.Json.JsonSerializer.Serialize(additionalObj);
 
-                if (type == "IN")
+                        if (type == "IN")
                 {
                     var expected = (long)Math.Round(payment.Amount);
                     if (tx.TransferAmount >= expected)
@@ -359,6 +490,26 @@ namespace EventManagement.Application.Services
                         payment.TransactionDate = parsedDate;
                         payment.Additional = addJson;
                         await _paymentRepo.UpdateAsync(payment);
+
+                                // Record transaction (In, TicketPayment, Success)
+                                var txn = new Transaction
+                                {
+                                    TransactionId = Guid.NewGuid(),
+                                    UserId = payment.Order?.UserId,
+                                    PaymentId = payment.PaymentId,
+                                    OrderId = payment.OrderId,
+                                    Amount = payment.Amount,
+                                    Direction = TransactionDirection.In,
+                                    Purpose = TransactionPurpose.TicketPayment,
+                                    Status = TransactionStatus.Success,
+                                    CreatedAt = parsedDate,
+                                    Additional = addJson
+                                };
+                                // compute system balance including this IN txn
+                                var baseBalance = await ComputeCurrentSystemBalanceAsync();
+                                var signed = Math.Abs(txn.Amount);
+                                txn.SystemBalance = baseBalance + signed;
+                                await _txnRepo.AddAsync(txn);
 
                         // Inline: Mark order paid + issue tickets
                         var order = await _orderRepo.GetByIdAsync(orderId);
@@ -371,6 +522,10 @@ namespace EventManagement.Application.Services
                             var tickets = await _ticketRepo.GetTicketsByOrderIdAsync(orderId);
                             foreach (var t in tickets)
                             {
+                                // Prevent EF from attaching large graphs that may conflict
+                                t.Attendee = null;
+                                t.EventSeatMapping = null!;
+                                t.Order = null!;
                                 t.Status = TicketStatus.Issued;
                                 t.PurchaseDate = parsedDate;
                                 var qrPayload = _qrService.BuildTicketPayload(t.TicketId, t.OrderId, t.EventId, t.AttendeeId, null);
@@ -416,6 +571,9 @@ namespace EventManagement.Application.Services
                         var tickets = await _ticketRepo.GetTicketsByOrderIdAsync(orderId);
                         foreach (var t in tickets)
                         {
+                            t.Attendee = null;
+                            t.EventSeatMapping = null!;
+                            t.Order = null!;
                             t.Status = TicketStatus.Cancelled;
                             // Best-effort delete QR image if existed
                             try
@@ -486,6 +644,25 @@ namespace EventManagement.Application.Services
                     payment.Additional = addJson;
                     await _paymentRepo.UpdateAsync(payment);
 
+                    // Record transaction (In, TicketPayment, Success)
+                    var txn = new Transaction
+                    {
+                        TransactionId = Guid.NewGuid(),
+                        UserId = payment.Order?.UserId,
+                        PaymentId = payment.PaymentId,
+                        OrderId = payment.OrderId,
+                        Amount = payment.Amount,
+                        Direction = TransactionDirection.In,
+                        Purpose = TransactionPurpose.TicketPayment,
+                        Status = TransactionStatus.Success,
+                        CreatedAt = txTimeUtc,
+                        Additional = addJson
+                    };
+                    var baseBalance = await ComputeCurrentSystemBalanceAsync();
+                    var signed = Math.Abs(txn.Amount);
+                    txn.SystemBalance = baseBalance + signed;
+                    await _txnRepo.AddAsync(txn);
+
                     var order = await _orderRepo.GetByIdAsync(orderId);
                     if (order != null)
                     {
@@ -496,6 +673,9 @@ namespace EventManagement.Application.Services
                         var tickets = await _ticketRepo.GetTicketsByOrderIdAsync(orderId);
                         foreach (var t in tickets)
                         {
+                            t.Attendee = null;
+                            t.EventSeatMapping = null!;
+                            t.Order = null!;
                             t.Status = TicketStatus.Issued;
                             t.PurchaseDate = txTimeUtc;
                             var qrPayload = _qrService.BuildTicketPayload(t.TicketId, t.OrderId, t.EventId, t.AttendeeId, null);
@@ -539,6 +719,9 @@ namespace EventManagement.Application.Services
                         var tickets = await _ticketRepo.GetTicketsByOrderIdAsync(orderId);
                         foreach (var t in tickets)
                         {
+                            t.Attendee = null;
+                            t.EventSeatMapping = null!;
+                            t.Order = null!;
                             t.Status = TicketStatus.Cancelled;
                             try
                             {
@@ -584,6 +767,9 @@ namespace EventManagement.Application.Services
                     var tickets = await _ticketRepo.GetTicketsByOrderIdAsync(orderId);
                     foreach (var t in tickets)
                     {
+                        t.Attendee = null;
+                        t.EventSeatMapping = null!;
+                        t.Order = null!;
                         t.Status = TicketStatus.Cancelled;
                             try
                             {
@@ -607,63 +793,47 @@ namespace EventManagement.Application.Services
             return true;
         }
 
-        // Manual cancel: mark payment/order/tickets as failed/cancelled for a user's pending order
-        public async Task<bool> CancelPendingOrderAsync(string authHeader, ManualCancelRequestDTO request)
+        // Handle cancel/failed payment via gateway return URL params
+        public async Task<bool> HandleGatewayReturnCancelAsync(CancelOrderRequestDTO payload)
         {
-            if (request == null || (request.OrderId == null && request.PaymentId == null))
-                throw new InvalidOperationException("OrderId or PaymentId is required");
+            if (payload == null || payload.OrderId == Guid.Empty) return true; // nothing to do
 
-            // Extract user id from JWT
-            if (string.IsNullOrEmpty(authHeader)) throw new InvalidOperationException("Missing auth token");
-            var token = authHeader.StartsWith("Bearer ") ? authHeader.Substring("Bearer ".Length).Trim() : authHeader;
-            System.IdentityModel.Tokens.Jwt.JwtSecurityToken jwtToken;
-            try
-            {
-                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-                jwtToken = handler.ReadJwtToken(token);
-            }
-            catch
-            {
-                throw new InvalidOperationException("Invalid token");
-            }
-            var subClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
-            if (subClaim == null || !Guid.TryParse(subClaim.Value, out var userGuid)) throw new InvalidOperationException("Invalid token");
+            // If resultCode indicates success or authorization, do not cancel
+            var rc = (payload.ResultCode ?? string.Empty).Trim();
+            if (rc == "0" || rc == "9000") return true;
 
-            // Locate order
-            Order? order = null;
-            Payment? payment = null;
-            if (request.OrderId.HasValue)
-            {
-                order = await _orderRepo.GetByIdAsync(request.OrderId.Value);
-            }
-            else if (request.PaymentId.HasValue)
-            {
-                payment = await _paymentRepo.GetByIdAsync(request.PaymentId.Value);
-                if (payment != null)
-                {
-                    order = await _orderRepo.GetByIdAsync(payment.OrderId);
-                }
-            }
-            if (order == null) return false;
-
-            // Ensure the order belongs to the caller
-            if (order.UserId != userGuid)
-                throw new InvalidOperationException("You are not allowed to cancel this order");
-
-            // If already final, treat as success (idempotent)
-            if (order.Status == OrderStatus.Cancelled || order.Status == OrderStatus.Paid)
-                return true;
+            var orderId = payload.OrderId;
+            try { _logger.LogInformation("HandleGatewayReturnCancel start: orderId={OrderId}, resultCode={ResultCode}, orderInfo={OrderInfo}", orderId, payload.ResultCode, payload.OrderInfo); } catch { }
 
             await _uow.BeginTransactionAsync();
             try
             {
-                // Mark all pending payments of this order as Failed
-                var payments = await _paymentRepo.WhereAsync(p => p.OrderId == order.OrderId && p.Status == PaymentStatus.Pending);
+                // Mark pending payments as Failed and attach additional info
+                var payments = await _paymentRepo.WhereAsync(p => p.OrderId == orderId && p.Status == PaymentStatus.Pending);
+                if (payments == null || !payments.Any())
+                {
+                    try { _logger.LogWarning("HandleGatewayReturnCancel: no pending payments found for orderId={OrderId}", orderId); } catch { }
+                }
                 var now = DateTime.UtcNow;
-                var addObj = new { reason = request.Reason ?? "ManualCancel", source = "Client", at = now };
+                var addObj = new
+                {
+                    provider = "Pay2S",
+                    source = "GatewayReturn",
+                    payload.AccessKey,
+                    payload.Amount,
+                    payload.Message,
+                    payload.OrderInfo,
+                    payload.OrderType,
+                    payload.PartnerCode,
+                    payload.PayType,
+                    payload.RequestId,
+                    payload.ResponseTime,
+                    payload.ResultCode,
+                    m2signature = payload.M2Signature
+                };
                 var addJson = JsonSerializer.Serialize(addObj);
 
-                foreach (var pm in payments)
+                foreach (var pm in payments ?? Enumerable.Empty<Payment>())
                 {
                     pm.Status = PaymentStatus.Failed;
                     pm.TransactionDate = now;
@@ -672,61 +842,91 @@ namespace EventManagement.Application.Services
                 }
 
                 // Cancel order and tickets
-                order.Status = OrderStatus.Cancelled;
-                order.OrderPendingExpires = null;
-                await _orderRepo.UpdateAsync(order);
-
-                var tickets = await _ticketRepo.GetTicketsByOrderIdAsync(order.OrderId);
-                var releasedSeatIds = tickets.Select(t => t.SeatId).Distinct().ToList();
-                foreach (var t in tickets)
+                var order = await _orderRepo.GetByIdAsync(orderId);
+                if (order != null)
                 {
-                    t.Status = TicketStatus.Cancelled;
+                    // If already final, skip
+                    if (order.Status == OrderStatus.Paid || order.Status == OrderStatus.Cancelled) {
+                        try { _logger.LogInformation("HandleGatewayReturnCancel skipped: order already final. orderId={OrderId}, status={Status}", orderId, order.Status); } catch { }
+                        await _uow.RollbackTransactionAsync();
+                        return true;
+                    }
+
+                    order.Status = OrderStatus.Cancelled;
+                    order.OrderPendingExpires = null;
+                    await _orderRepo.UpdateAsync(order);
+
+                    var tickets = await _ticketRepo.GetTicketsByOrderIdAsync(order.OrderId);
+                    var releasedSeatIds = tickets.Select(t => t.SeatId).Distinct().ToList();
+                    foreach (var t in tickets)
+                    {
+                        t.Attendee = null;
+                        t.EventSeatMapping = null!;
+                        t.Order = null!;
+                        t.Status = TicketStatus.Cancelled;
+                        try
+                        {
+                            if (!string.IsNullOrWhiteSpace(t.QrImageUrl))
+                            {
+                                var pid = _cloudinaryService.BuildTicketPublicId(t.EventId, t.OrderId, t.TicketId);
+                                await _cloudinaryService.DeleteImageByPublicIdAsync(pid);
+                                t.QrImageUrl = null;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            try { _logger.LogWarning(ex, "Failed to delete QR image for ticket {TicketId}", t.TicketId); } catch { }
+                        }
+                        await _ticketRepo.UpdateAsync(t);
+                        // Release seat availability immediately (best effort)
+                        try
+                        {
+                            var mappings = await _seatMappingRepo.WhereAsync(m => m.EventId == t.EventId && m.SeatId == t.SeatId);
+                            foreach (var m in mappings)
+                            {
+                                m.IsAvailable = true;
+                                await _seatMappingRepo.UpdateAsync(m);
+                            }
+                        }
+                        catch { /* ignore seat release failures */ }
+                    }
+
+                    await _uow.SaveChangesAsync();
+                    await _uow.CommitTransactionAsync();
+
+                    // Realtime: notify seats released
                     try
                     {
-                        if (!string.IsNullOrWhiteSpace(t.QrImageUrl))
+                        var eventId = tickets.FirstOrDefault()?.EventId ?? Guid.Empty;
+                        if (eventId != Guid.Empty && releasedSeatIds.Count > 0)
                         {
-                            var pid = _cloudinaryService.BuildTicketPublicId(t.EventId, t.OrderId, t.TicketId);
-                            await _cloudinaryService.DeleteImageByPublicIdAsync(pid);
-                            t.QrImageUrl = null;
+                            await _realtime.SeatsReleased(eventId, releasedSeatIds);
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        try { _logger.LogWarning(ex, "Failed to delete QR image for ticket {TicketId}", t.TicketId); } catch { }
-                    }
-                    await _ticketRepo.UpdateAsync(t);
-                    // Release seat availability immediately (best effort)
-                    try
-                    {
-                        var mappings = await _seatMappingRepo.WhereAsync(m => m.EventId == t.EventId && m.SeatId == t.SeatId);
-                        foreach (var m in mappings)
-                        {
-                            m.IsAvailable = true;
-                            await _seatMappingRepo.UpdateAsync(m);
-                        }
-                    }
-                    catch { /* ignore seat release failures */ }
+                    catch { }
+                    try { _logger.LogInformation("HandleGatewayReturnCancel done: order cancelled. orderId={OrderId}", orderId); } catch { }
                 }
 
-                await _uow.SaveChangesAsync();
-                await _uow.CommitTransactionAsync();
-                // Realtime: notify seats released
-                try
-                {
-                    var eventId = tickets.FirstOrDefault()?.EventId ?? Guid.Empty;
-                    if (eventId != Guid.Empty && releasedSeatIds.Count > 0)
-                    {
-                        await _realtime.SeatsReleased(eventId, releasedSeatIds);
-                    }
-                }
-                catch { }
                 return true;
             }
             catch
             {
+                try { _logger.LogError("HandleGatewayReturnCancel error: orderId={OrderId}", orderId); } catch { }
                 await _uow.RollbackTransactionAsync();
                 throw;
             }
+        }
+
+        private async Task<decimal> ComputeCurrentSystemBalanceAsync()
+        {
+            var successTxns = await _txnRepo.WhereAsync(t => t.Status == TransactionStatus.Success);
+            decimal balance = 0m;
+            foreach (var t in successTxns)
+            {
+                var amt = Math.Abs(t.Amount);
+                if (t.Direction == TransactionDirection.In) balance += amt; else balance -= amt;
+            }
+            return balance;
         }
 
         private async Task TrySendTicketsEmailAsync(Guid orderId)
@@ -814,6 +1014,10 @@ namespace EventManagement.Application.Services
                     if (t.Qrcode == null)
                     {
                         t.Qrcode = payload;
+                        // Ensure no large navs are attached when saving QR text
+                        t.Attendee = null;
+                        t.EventSeatMapping = null!;
+                        t.Order = null!;
                         await _ticketRepo.UpdateAsync(t);
                     }
                     var key = $"qr_{t.TicketId:N}";

@@ -45,6 +45,9 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IOrganizerRequestRepository, OrganizerRequestRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
+builder.Services.AddScoped<IRefundRequestRepository, RefundRequestRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<IUserBankAccountRepository, UserBankAccountRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<ISeatRepository, SeatRepository>();
 builder.Services.AddScoped<ISettlementRepository, SettlementRepository>();
@@ -69,6 +72,7 @@ builder.Services.AddScoped<ICheckoutService, CheckoutService>();
 builder.Services.AddScoped<IQRCodeService, QRCodeService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+builder.Services.AddScoped<IRefundService, RefundService>();
 
 // Hosted Services
 builder.Services.AddHostedService<CleanupService>();
@@ -134,6 +138,16 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddControllers();
 
+// CORS for FE app (Blazor) on localhost:5000
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend",
+        policy => policy
+            .WithOrigins("https://localhost:5000", "http://localhost:5000")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
 
 var app = builder.Build();
 
@@ -147,6 +161,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Enable CORS before auth
+app.UseCors("Frontend");
 
 app.UseAuthentication();
 app.UseAuthorization();

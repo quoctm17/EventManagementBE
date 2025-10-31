@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using EventManagement.Application.Interfaces.Services;
 using EventManagement.Application.Constants;
-using EventManagement.Application.DTOs.Requests;
+// using EventManagement.Application.DTOs.Requests; // already imported above
 using EventManagement.Application.DTOs.Responses;
 using EventManagement.Application.DTOs.Requests.Tests;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +11,7 @@ using EventManagement.Application.DTOs.Requests.Webhooks;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using EventManagement.Application.DTOs.Requests;
 
 namespace EventManagement.API.Controllers
 {
@@ -21,12 +22,14 @@ namespace EventManagement.API.Controllers
         private readonly IPaymentService _paymentService;
         private readonly IOrderService _orderService;
         private readonly IConfiguration _config;
+        private readonly ILogger<PaymentController> _logger;
 
-        public PaymentController(IPaymentService paymentService, IOrderService orderService, IConfiguration config)
+        public PaymentController(IPaymentService paymentService, IOrderService orderService, IConfiguration config, ILogger<PaymentController> logger)
         {
             _paymentService = paymentService;
             _orderService = orderService;
             _config = config;
+            _logger = logger;
         }
 
         [HttpGet("payment-methods")]
@@ -135,26 +138,31 @@ namespace EventManagement.API.Controllers
             }
         }
 
-        // Manual cancel endpoint for sandbox/abandoned checkout
-        [Authorize]
-        [HttpPost("cancel/manual")]
-        public async Task<IActionResult> ManualCancel([FromBody] ManualCancelRequestDTO dto)
+        // Manual cancel endpoint removed in favor of gateway-return cancel handler
+
+        // Gateway return cancel/failure handler: FE posts params captured from return URL
+        [AllowAnonymous]
+        [HttpPost("cancel/return")]
+        public async Task<IActionResult> GatewayReturnCancel([FromBody] CancelOrderRequestDTO dto)
         {
             try
             {
-                var auth = Request.Headers["Authorization"].FirstOrDefault() ?? string.Empty;
-                var ok = await _orderService.CancelPendingOrderAsync(auth, dto);
-                if (!ok) return NotFound(new { success = false });
-                return Ok(new { success = true });
+                _logger.LogInformation("GatewayReturnCancel received: orderId={OrderId}, resultCode={ResultCode}, orderInfo={OrderInfo}", dto.OrderId, dto.ResultCode, dto.OrderInfo);
+                var ok = await _orderService.HandleGatewayReturnCancelAsync(dto);
+                _logger.LogInformation("GatewayReturnCancel processed: orderId={OrderId}, success={Success}", dto.OrderId, ok);
+                return Ok(new { success = ok });
             }
             catch (InvalidOperationException ex)
             {
+                _logger.LogWarning(ex, "GatewayReturnCancel invalid operation for orderId={OrderId}", dto?.OrderId);
                 return BadRequest(new { success = false, error = ex.Message });
             }
             catch
             {
+                _logger.LogError("GatewayReturnCancel failed for orderId={OrderId}", dto?.OrderId);
                 return StatusCode(500, new { success = false });
             }
         }
+
     }
 }

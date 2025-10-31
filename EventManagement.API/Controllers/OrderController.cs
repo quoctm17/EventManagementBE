@@ -61,6 +61,41 @@ namespace EventManagement.API.Controllers
             }
         }
 
+        // New: Full order detail for Order Detail page (event, order, payments, tickets, refund requests)
+        [HttpGet("{orderId}/detail")]
+        [Authorize]
+        public async Task<ActionResult<HTTPResponseValue<OrderDetailResponseDTO>>> GetOrderDetail(Guid orderId)
+        {
+            var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+            if (string.IsNullOrEmpty(authHeader))
+            {
+                var resp = new HTTPResponseValue<string>(null, StatusResponse.Unauthorized, MessageResponse.Unauthorized);
+                return Unauthorized(resp);
+            }
+
+            try
+            {
+                var detail = await _orderService.GetOrderDetailAsync(authHeader!, orderId);
+                if (detail == null)
+                {
+                    var notfound = new HTTPResponseValue<string>(null, StatusResponse.NotFound, "Order not found");
+                    return NotFound(notfound);
+                }
+                var success = new HTTPResponseValue<OrderDetailResponseDTO>(detail, StatusResponse.Success, MessageResponse.Success);
+                return Ok(success);
+            }
+            catch (InvalidOperationException ex)
+            {
+                var bad = new HTTPResponseValue<string>(null, StatusResponse.BadRequest, ex.Message);
+                return BadRequest(bad);
+            }
+            catch
+            {
+                var error = new HTTPResponseValue<string>(null, StatusResponse.Error, MessageResponse.Error);
+                return StatusCode(500, error);
+            }
+        }
+
 
         [HttpPost]
         [Authorize]

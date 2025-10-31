@@ -73,7 +73,7 @@ namespace EventManagement.Application.Services
                             Status = t.Status,
                             Additional = t.Additional,
                             TicketCategory = t.EventSeatMapping?.TicketCategory,
-                            SeatLabel = (t.EventSeatMapping?.Seat != null) ? ($"{t.EventSeatMapping.Seat.RowLabel}-{t.EventSeatMapping.Seat.SeatNumber}") : null
+                            SeatLabel = (t.EventSeatMapping?.Seat != null) ? $"{t.EventSeatMapping.Seat.RowLabel}-{t.EventSeatMapping.Seat.SeatNumber}" : null
                         })
                         // optional: order by seat label for stable display
                         .OrderBy(t => t.SeatLabel)

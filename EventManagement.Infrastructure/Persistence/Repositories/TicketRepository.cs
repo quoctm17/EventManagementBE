@@ -35,7 +35,6 @@ namespace EventManagement.Infrastructure.Persistence.Repositories
                         .ThenInclude(e => e.Venue)
                 .Include(t => t.EventSeatMapping)
                     .ThenInclude(esm => esm.Seat)
-                .Include(t => t.Attendee)
                 .Where(t => t.OrderId == orderId)
                 .AsNoTracking()
                 .ToListAsync();
