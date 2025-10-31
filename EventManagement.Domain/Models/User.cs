@@ -47,6 +47,10 @@ public partial class User
 
     public virtual ICollection<OrganizerRequest> OrganizerRequestUsers { get; set; } = new List<OrganizerRequest>();
 
+    public virtual ICollection<RefundRequest> RefundRequestProcessedByNavigations { get; set; } = new List<RefundRequest>();
+
+    public virtual ICollection<RefundRequest> RefundRequestUsers { get; set; } = new List<RefundRequest>();
+
     public virtual ICollection<SeatHold> SeatHolds { get; set; } = new List<SeatHold>();
 
     public virtual ICollection<Settlement> Settlements { get; set; } = new List<Settlement>();
@@ -54,6 +58,10 @@ public partial class User
     public virtual ICollection<SystemLog> SystemLogs { get; set; } = new List<SystemLog>();
 
     public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+
+    public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+
+    public virtual ICollection<UserBankAccount> UserBankAccounts { get; set; } = new List<UserBankAccount>();
 
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }

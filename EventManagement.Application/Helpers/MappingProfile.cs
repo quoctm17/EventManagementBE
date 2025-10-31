@@ -20,6 +20,12 @@ namespace EventManagement.Application.Helpers
                 .ForMember(dest => dest.VenueName, opt => opt.MapFrom(src => src.Venue.VenueName))
                 .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories.Select(c => c.CategoryName)))
                 .ForMember(dest => dest.CoverImageUrl, opt => opt.MapFrom(src => src.CoverImageUrl))
+                // Map sale window
+                .ForMember(dest => dest.SaleStartTime, opt => opt.MapFrom(src => src.SaleStartTime))
+                .ForMember(dest => dest.SaleEndTime, opt => opt.MapFrom(src => src.SaleEndTime))
+                // Map actual event time window
+                .ForMember(dest => dest.EventStartTime, opt => opt.MapFrom(src => src.EventStartTime))
+                .ForMember(dest => dest.EventEndTime, opt => opt.MapFrom(src => src.EventEndTime))
                 .ForMember(dest => dest.StartingPrice, opt => opt.Ignore());
 
             CreateMap<Event, EventListItemDTO>()
@@ -27,6 +33,12 @@ namespace EventManagement.Application.Helpers
                 .ForMember(dest => dest.VenueProvince, opt => opt.MapFrom(src => src.Venue.Province))
                 .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories.Select(c => c.CategoryName)))
                 .ForMember(dest => dest.CoverImageUrl, opt => opt.MapFrom(src => src.CoverImageUrl))
+                // Map sale window
+                .ForMember(dest => dest.SaleStartTime, opt => opt.MapFrom(src => src.SaleStartTime))
+                .ForMember(dest => dest.SaleEndTime, opt => opt.MapFrom(src => src.SaleEndTime))
+                // Map actual event time window
+                .ForMember(dest => dest.EventStartTime, opt => opt.MapFrom(src => src.EventStartTime))
+                .ForMember(dest => dest.EventEndTime, opt => opt.MapFrom(src => src.EventEndTime))
                 .ForMember(dest => dest.StartingPrice, opt => opt.Ignore());
 
             CreateMap<Event, EventDetailDTO>()
@@ -35,6 +47,12 @@ namespace EventManagement.Application.Helpers
                 .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories.Select(c => c.CategoryName)))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.Organizer, opt => opt.MapFrom(src => src.Organizer))
+                // Map sale window
+                .ForMember(dest => dest.SaleStartTime, opt => opt.MapFrom(src => src.SaleStartTime))
+                .ForMember(dest => dest.SaleEndTime, opt => opt.MapFrom(src => src.SaleEndTime))
+                // Map actual event time window
+                .ForMember(dest => dest.EventStartTime, opt => opt.MapFrom(src => src.EventStartTime))
+                .ForMember(dest => dest.EventEndTime, opt => opt.MapFrom(src => src.EventEndTime))
                 .ForMember(dest => dest.TicketTiers, opt => opt.Ignore());
 
             // Venue -> DestinationDto: map Province -> City and choose main image if any

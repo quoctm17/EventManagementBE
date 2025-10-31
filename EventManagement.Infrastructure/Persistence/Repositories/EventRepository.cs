@@ -17,14 +17,14 @@ namespace EventManagement.Infrastructure.Persistence.Repositories
 
         public async Task<IEnumerable<Event>> GetUpcomingPublishedAsync(int limit = 6)
         {
-            // Return published events ordered by EventDate then StartTime — do not exclude past dates so UI will always have items
+            // Return published events ordered by EventDate then EventStartTime — do not exclude past dates so UI will always have items
             return await _context.Events
                 .Include(e => e.EventImages)
                 .Include(e => e.Venue)
                 .Include(e => e.Categories)
                 .Where(e => e.IsPublished == true)
                 .OrderBy(e => e.EventDate)
-                .ThenBy(e => e.StartTime)
+                .ThenBy(e => e.EventStartTime)
                 .Take(limit)
                 .AsNoTracking()
                 .ToListAsync();
@@ -103,10 +103,10 @@ namespace EventManagement.Infrastructure.Persistence.Repositories
             // Sorting (simple)
             query = sortBy switch
             {
-                "date_desc" => query.OrderByDescending(e => e.EventDate).ThenByDescending(e => e.StartTime),
+                "date_desc" => query.OrderByDescending(e => e.EventDate).ThenByDescending(e => e.EventStartTime),
                 "price_asc" => query.OrderBy(e => e.EventSeatMappings.Min(m => m.Price)),
                 "price_desc" => query.OrderByDescending(e => e.EventSeatMappings.Min(m => m.Price)),
-                _ => query.OrderBy(e => e.EventDate).ThenBy(e => e.StartTime),
+                _ => query.OrderBy(e => e.EventDate).ThenBy(e => e.EventStartTime),
             };
 
             var total = await query.CountAsync();

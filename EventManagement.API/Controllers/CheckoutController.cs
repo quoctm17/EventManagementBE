@@ -30,7 +30,7 @@ namespace EventManagement.API.Controllers
                 var resp = new HTTPResponseValue<string>(null, StatusResponse.Unauthorized, MessageResponse.Unauthorized);
                 return Unauthorized(resp);
             }
-            if (request == null || request.EventId == Guid.Empty || request.SeatIds == null || request.SeatIds.Count == 0)
+            if (request == null || request.UserId == Guid.Empty || request.EventId == Guid.Empty || request.SeatIds == null || request.SeatIds.Count == 0)
             {
                 var bad = new HTTPResponseValue<string>(null, StatusResponse.BadRequest, MessageResponse.BadRequest);
                 return BadRequest(bad);
