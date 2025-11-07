@@ -5,7 +5,8 @@ namespace EventManagement.Application.DTOs.Requests.Refunds
     public class CreateRefundRequestDTO
     {
         public Guid OrderId { get; set; }
-        public decimal Amount { get; set; }
+        // Optional: Client may pass desired amount preview; backend will recompute from policies
+        public decimal? Amount { get; set; }
         public string? Reason { get; set; }
 
         // If user wants to use a saved bank account
@@ -19,5 +20,8 @@ namespace EventManagement.Application.DTOs.Requests.Refunds
         // Save manual details for later and optionally set as default
         public bool SaveBankAccount { get; set; }
         public bool SetAsDefault { get; set; }
+
+        // For partial refund: list of ticket IDs to refund; if null or empty => refund all eligible tickets in order
+        public System.Collections.Generic.List<Guid>? TicketIds { get; set; }
     }
 }

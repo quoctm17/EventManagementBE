@@ -43,6 +43,8 @@ public partial class RefundRequest
 
     public virtual User? ProcessedByNavigation { get; set; }
 
+    public virtual ICollection<RefundRequestItem> RefundRequestItems { get; set; } = new List<RefundRequestItem>();
+
     public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
 
     public virtual User User { get; set; } = null!;

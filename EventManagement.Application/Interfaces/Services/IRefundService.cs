@@ -10,5 +10,7 @@ namespace EventManagement.Application.Interfaces.Services
     {
         Task<RefundRequestResponseDTO> CreateRefundRequestAsync(string authHeader, CreateRefundRequestDTO request);
         Task<bool> AdminMarkRefundPaidAsync(Guid adminUserId, AdminCompleteRefundDTO request);
+        Task<bool> AdminAcceptRefundAsync(Guid adminUserId, AdminAcceptRefundDTO request);
+        Task<bool> AdminRejectRefundAsync(Guid adminUserId, AdminRejectRefundDTO request);
     }
 }

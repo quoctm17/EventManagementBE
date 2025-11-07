@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace EventManagement.Application.DTOs.Responses
 {
@@ -19,5 +20,7 @@ namespace EventManagement.Application.DTOs.Responses
         public DateTime? CreatedAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
         public Guid? ProcessedBy { get; set; }
+
+        public List<RefundRequestItemDTO> Items { get; set; } = new();
     }
 }

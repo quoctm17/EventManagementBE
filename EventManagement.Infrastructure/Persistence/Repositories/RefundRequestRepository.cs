@@ -25,5 +25,12 @@ namespace EventManagement.Infrastructure.Persistence.Repositories
                 .Where(r => r.UserId == userId)
                 .ToListAsync();
         }
+
+        public async Task<RefundRequest?> GetWithItemsAsync(Guid refundRequestId)
+        {
+            return await _context.RefundRequests
+                .Include(r => r.RefundRequestItems)
+                .SingleOrDefaultAsync(r => r.RefundRequestId == refundRequestId);
+        }
     }
 }

@@ -47,6 +47,8 @@ public partial class Event
 
     public virtual User Organizer { get; set; } = null!;
 
+    public virtual ICollection<RefundPolicy> RefundPolicies { get; set; } = new List<RefundPolicy>();
+
     public virtual ICollection<SeatHold> SeatHolds { get; set; } = new List<SeatHold>();
 
     public virtual ICollection<Settlement> Settlements { get; set; } = new List<Settlement>();
