@@ -9,5 +9,6 @@ namespace EventManagement.Application.Interfaces.Repositories
     {
         Task<IEnumerable<RefundRequest>> GetByUserIdAsync(Guid userId);
         Task<IEnumerable<RefundRequest>> GetByOrderIdAsync(Guid orderId);
+        Task<RefundRequest?> GetWithItemsAsync(Guid refundRequestId);
     }
 }

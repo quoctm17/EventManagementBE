@@ -34,4 +34,6 @@ public partial class Ticket
     public virtual EventSeatMapping EventSeatMapping { get; set; } = null!;
 
     public virtual Order Order { get; set; } = null!;
+
+    public virtual ICollection<RefundRequestItem> RefundRequestItems { get; set; } = new List<RefundRequestItem>();
 }
